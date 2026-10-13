@@ -4,6 +4,8 @@ At first it looks like a flat floor plan of a house. Until you scroll.
 
 **Live demo:** https://sam1983aing.github.io/casa-serra/
 
+**The starter prompt, on its own page with a copy button:** https://sam1983aing.github.io/casa-serra/prompt/
+
 Work in progress, and still in the early stages. It runs best on a laptop. The whole house is drawn in real time, with about 39 MB of textures on a laptop and about 13 MB on a phone. If your device can't run it, you get a still and a clip of the walk.
 
 ## How it was made

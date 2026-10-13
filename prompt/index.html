@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>The starter prompt · Lintel</title>
+  <meta name="description" content="The prompt I would start with today for a floor plan that becomes a house as you scroll. It won't give you my page. It gets you a first version of the idea." />
+  <meta name="theme-color" content="#efebe2" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23efebe2'/%3E%3Cpath d='M9 6v20h15v-5h-9V6z' fill='%231d1d1f'/%3E%3C/svg%3E" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="The starter prompt · Lintel" />
+  <meta property="og:description" content="The prompt I would start with today for a floor plan that becomes a house as you scroll. It won't give you my page. It gets you a first version of the idea." />
+  <meta property="og:url" content="https://sam1983aing.github.io/casa-serra/prompt/" />
+  <meta property="og:image" content="https://sam1983aing.github.io/casa-serra/media/share.jpg" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="The starter prompt · Lintel" />
+  <meta name="twitter:description" content="The prompt I would start with today for a floor plan that becomes a house as you scroll. It won't give you my page." />
+  <meta name="twitter:image" content="https://sam1983aing.github.io/casa-serra/media/share.jpg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Saira+Stencil+One&family=Geist:wght@400;500&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    /* Lintel's paper, ink and one accent (theme.css, with the stencil type's signal orange) */
+    :root { --bg: #efebe2; --fg: #1d1d1f; --dim: rgba(29, 29, 31, 0.62); --line: rgba(29, 29, 31, 0.45); --accent: #f0500f; --card: #f7f4ed;
+      --display: 'Saira Stencil One', 'Arial Black', sans-serif; --label: 'Geist Mono', ui-monospace, monospace; --body: 'Geist', system-ui, sans-serif; --gutter: clamp(16px, 4vw, 44px); }
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body { margin: 0; }
+    body { background: var(--bg); color: var(--fg); font: 400 17px/1.55 var(--body); -webkit-font-smoothing: antialiased; }
+    a { color: inherit; }
+    ::selection { background: var(--accent); color: #fff; }
+    .bar { display: flex; justify-content: space-between; align-items: center; padding: 22px var(--gutter); }
+    .mark { font: 400 26px/1 var(--display); text-transform: uppercase; text-decoration: none; }
+    .pill { display: inline-flex; align-items: center; height: 38px; padding: 0 18px; border: 1px solid var(--fg); border-radius: 999px; background: none; color: inherit; cursor: pointer;
+      font: 500 11px/1 var(--label); letter-spacing: 0.12em; text-transform: uppercase; text-decoration: none; white-space: nowrap; transition: background 0.3s, color 0.3s, border-color 0.3s; }
+    .pill:hover, .pill--solid { background: var(--fg); color: var(--bg); }
+    .pill--solid:hover, .pill.is-done { background: var(--accent); border-color: var(--accent); color: #fff; }
+    main { width: min(820px, 100%); margin: 0 auto; padding: clamp(18px, 5vw, 56px) var(--gutter) 72px; }
+    .kicker { margin: 0 0 18px; font: 500 11px/1.6 var(--label); letter-spacing: 0.26em; text-transform: uppercase; }
+    .kicker span { color: var(--accent); padding: 0 6px; }
+    h1 { margin: 0; font: 400 clamp(38px, 7.4vw, 76px)/0.98 var(--display); text-transform: uppercase; letter-spacing: 0.005em; }
+    h1 em { font-style: normal; color: var(--accent); }
+    .lede { margin: 26px 0 0; max-width: 34em; font-size: clamp(17px, 2.1vw, 20px); }
+    .how { margin: 12px 0 0; max-width: 40em; color: var(--dim); font-size: 15px; }
+    .how b { font-weight: 500; color: var(--accent); font-family: var(--label); font-size: 0.93em; }
+    .card { margin: 34px 0 0; border: 1px solid var(--fg); background: var(--card); }
+    .card__top { position: sticky; top: 0; display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 10px 12px 10px 18px; border-bottom: 1px solid var(--line); background: var(--card); }
+    .card__top p { margin: 0; font: 500 10.5px/1 var(--label); letter-spacing: 0.24em; text-transform: uppercase; }
+    .prompt { margin: 0; padding: 22px 18px 26px; white-space: pre-wrap; overflow-wrap: anywhere; font: 400 clamp(13px, 1.75vw, 14.5px)/1.65 var(--label); }
+    .prompt mark { background: none; color: var(--accent); font-weight: 500; }
+    .after { margin: 18px 0 0; max-width: 40em; color: var(--dim); font-size: 15px; }
+    h2 { margin: 64px 0 0; padding-top: 22px; border-top: 1px solid var(--line); font: 400 clamp(24px, 3.6vw, 34px)/1.05 var(--display); text-transform: uppercase; }
+    .run { margin: 14px 0 0; max-width: 40em; }
+    .shots { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 22px 0 0; }
+    .shots figure { margin: 0; }
+    .shots img { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; object-fit: cover; border: 1px solid var(--line); background: #e4dfd3; }
+    .shots figcaption { padding-top: 7px; font: 400 10.5px/1.4 var(--label); letter-spacing: 0.08em; text-transform: uppercase; color: var(--dim); }
+    .links { display: flex; flex-wrap: wrap; gap: 12px; margin: 26px 0 0; }
+    footer { margin: 72px 0 0; padding-top: 16px; border-top: 1px solid var(--line); font: 400 10px/1.5 var(--label); letter-spacing: 0.1em; text-transform: uppercase; color: var(--dim); }
+    @media (max-width: 560px) { .shots { grid-template-columns: 1fr; } .card__top { padding-left: 14px; } .prompt { padding: 18px 14px 22px; } }
+  </style>
+</head>
+<body>
+  <header class="bar">
+    <a class="mark" href="../">Lintel</a>
+    <a class="pill" href="../">Try the demo</a>
+  </header>
+
+  <main>
+    <p class="kicker">Lintel <span>·</span> Casa Serra <span>·</span> Starter prompt</p>
+    <h1>The <em>prompt</em> I would start with today</h1>
+    <p class="lede">It won't give you this page. It gets you a first version of the idea, and then the real work starts.</p>
+    <p class="how">Swap the parts in <b>[brackets]</b> for your own subject. Tested once in Claude Code with Opus 5.5.</p>
+
+    <section class="card" aria-label="The starter prompt">
+      <div class="card__top">
+        <p>Starter prompt</p>
+        <button class="pill pill--solid" id="copy" type="button">Copy the prompt</button>
+      </div>
+      <pre class="prompt" id="prompt">I want to build a scroll-driven landing page for <mark>[an architecture studio, a house, a hotel, your subject]</mark>.
+
+The idea: the page opens on a flat floor plan, like a sheet an architect prints. Black ink on paper, room names, dimensions. Nothing looks 3D. When the visitor scrolls, the walls rise out of the drawing, the camera comes down to the front door and walks through <mark>[the rooms you want, in order]</mark> at eye height. Each room stays a line drawing until the camera gets there, then the real materials sweep across it.
+
+What I care about:
+- The floor plan is not a picture. It is the real 3D model, cut at about 1.2 m and seen from straight above through a very long lens. The drawing and the building are the same thing.
+- The camera travels deep into the space, room after room. It does not orbit the building from outside.
+- It should feel like <mark>[a house that costs millions, your level of ambition]</mark>: big rooms, real furniture, late afternoon light.
+- three.js, GSAP ScrollTrigger and Lenis, plain files, no build step. Free CC0 materials for the textures.
+
+Before you write any code, propose the layout of the building with sizes I can picture, and the camera path stop by stop. Give me two or three directions to choose from and wait for my answer. Then build in checkpoints. First checkpoint only: the plan sheet, the walls rising, and the walk to the first room. Record it and show me before you go further.</pre>
+    </section>
+    <p class="after">The last paragraph matters as much as the idea. Without it you get a finished page you did not choose.</p>
+
+    <h2>What one run gave</h2>
+    <p class="run">I tested that prompt once, on a fresh session that knew nothing about this project. It proposed three layouts and waited. I answered with one line, and about an hour later it came back with a first checkpoint. That is one run, so yours will look different.</p>
+    <div class="shots">
+      <figure><img src="../media/casa-larga-sheet.jpg" alt="A floor plan sheet titled Casa Larga, black ink on paper" loading="lazy" onerror="this.closest('figure').hidden = true" /><figcaption>The plan sheet it drew</figcaption></figure>
+      <figure><img src="../media/casa-larga-hall.jpg" alt="An entrance hall with stone floor and oak walls, the next room still a line drawing" loading="lazy" onerror="this.closest('figure').hidden = true" /><figcaption>The first room, the next one still a drawing</figcaption></figure>
+    </div>
+    <div class="links">
+      <a class="pill" href="https://sam1983aing.github.io/casa-larga/">Open that result</a>
+      <a class="pill" href="https://github.com/Sam1983Aing/casa-larga">Read its code</a>
+      <a class="pill" href="https://github.com/Sam1983Aing/casa-serra#how-it-was-made">How the real page was made</a>
+    </div>
+
+    <footer>A concept by Sam Aing, built with Claude Opus 5.5 · Work in progress</footer>
+  </main>
+
+  <script>
+    // The text that gets copied is the prompt as plain text, not what is painted on the page.
+    (function () {
+      var TEXT = "I want to build a scroll-driven landing page for [an architecture studio, a house, a hotel, your subject].\n\nThe idea: the page opens on a flat floor plan, like a sheet an architect prints. Black ink on paper, room names, dimensions. Nothing looks 3D. When the visitor scrolls, the walls rise out of the drawing, the camera comes down to the front door and walks through [the rooms you want, in order] at eye height. Each room stays a line drawing until the camera gets there, then the real materials sweep across it.\n\nWhat I care about:\n- The floor plan is not a picture. It is the real 3D model, cut at about 1.2 m and seen from straight above through a very long lens. The drawing and the building are the same thing.\n- The camera travels deep into the space, room after room. It does not orbit the building from outside.\n- It should feel like [a house that costs millions, your level of ambition]: big rooms, real furniture, late afternoon light.\n- three.js, GSAP ScrollTrigger and Lenis, plain files, no build step. Free CC0 materials for the textures.\n\nBefore you write any code, propose the layout of the building with sizes I can picture, and the camera path stop by stop. Give me two or three directions to choose from and wait for my answer. Then build in checkpoints. First checkpoint only: the plan sheet, the walls rising, and the walk to the first room. Record it and show me before you go further.";
+      var btn = document.getElementById('copy'), back;
+      function done(ok) {
+        btn.textContent = ok ? 'Copied' : 'Select and copy';
+        btn.classList.toggle('is-done', ok);
+        clearTimeout(back);
+        back = setTimeout(function () { btn.textContent = 'Copy the prompt'; btn.classList.remove('is-done'); }, 2200);
+      }
+      function oldWay() {       // an in-app browser may refuse the clipboard: select the text so a long press copies it
+        var r = document.createRange(); r.selectNodeContents(document.getElementById('prompt'));
+        var s = getSelection(); s.removeAllRanges(); s.addRange(r);
+        var ok = false; try { ok = document.execCommand('copy'); } catch (e) {}
+        if (ok) s.removeAllRanges();
+        done(ok);
+      }
+      btn.addEventListener('click', function () {
+        if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(TEXT).then(function () { done(true); }, oldWay);
+        else oldWay();
+      });
+    })();
+  </script>
+</body>
+</html>
