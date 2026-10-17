@@ -6,6 +6,7 @@ import { RGBELoader } from 'three/addons/loaders/RGBELoader.js';
 import * as P from './plan.js';
 import * as B from './build.js';
 import * as F from './furnish.js';
+import { createExplore } from './explore.js';
 import { revealMaterial, inkMaterial, setRoomSweep, setExtSweep, PAPER, shared } from './reveal.js';
 import * as T from './textures.js';
 import { drawSheet, sheetObject } from './sheet.js';
@@ -529,12 +530,14 @@ const ui = {
   count: document.getElementById('count'),
   hint: document.getElementById('hint'),
   rulerNow: document.getElementById('rulerNow'),
+  cta: document.getElementById('exploreCta'),
 };
+let explore = null;
 
 let dirty = true;
 function apply() {
   const t = tl.time();
-  placeCamera(state.cam);
+  if (!explore?.active) placeCamera(state.cam);
   cutPlane.constant = state.cut;
   shared.uSection.value = state.cut < 50 ? 1 : 0;
   if (roofGroup) {
@@ -585,6 +588,7 @@ function apply() {
     ui.stopText.textContent = s.text;
   }
   ui.stop.classList.toggle('on', !!s);
+  ui.cta.classList.toggle('on', t > STOPS[STOPS.length - 1].at[0] + 8);
   const passed = STOPS.filter((x) => t >= x.at[0]).length;
   ui.count.innerHTML = `<b>${String(passed).padStart(2, '0')}</b> / 07 stops`;
   ui.rulerNow.style.transform = `translateY(${tl.progress() * 100}%)`;
@@ -597,12 +601,14 @@ function resize() {
   camera.aspect = w / h;
   KEYS = makeKeys(camera.aspect);
   apply();
+  if (explore?.active) explore.place();
 }
 
 function render() {
   if (!dirty || !roofGroup) return;
   dirty = false;
   renderer.render(scene, camera);
+  explore?.overlay();
 }
 
 // ------------------------------------------------------------------ start
@@ -622,10 +628,64 @@ loader.classList.add('done');
 gsap.registerPlugin(ScrollTrigger);
 const lenis = new Lenis({ lerp: 0.09, wheelMultiplier: 0.9 });
 lenis.on('scroll', ScrollTrigger.update);
-gsap.ticker.add((time) => { lenis.raf(time * 1000); render(); });
+gsap.ticker.add((time, delta) => {
+  lenis.raf(time * 1000);
+  explore?.update(Math.min(0.1, delta / 1000));
+  render();
+});
 gsap.ticker.lagSmoothing(0);
 tl.eventCallback('onUpdate', apply);
 ScrollTrigger.create({ trigger: '#track', start: 'top top', end: 'bottom bottom', animation: tl, scrub: 1.1 });
+
+// ------------------------------------------------------------------ explore
+
+// The scroll ends at the dining table; from there you walk the house
+// yourself. Entering jumps the tour to its end, so every finished room is in.
+explore = createExplore({
+  camera, canvas,
+  ui: { markers: document.getElementById('exMarkers'), plan: document.getElementById('exPlan') },
+  onChange: () => { dirty = true; },
+  onRoom: (name, sf, drawing) => {
+    document.getElementById('exRoom').textContent = name;
+    document.getElementById('exSf').textContent = sf;
+    document.getElementById('exNote').hidden = !drawing;
+  },
+});
+const exUI = document.getElementById('explore');
+function enterExplore() {
+  if (explore.active) return;
+  tl.progress(1);
+  apply();
+  lenis.scrollTo(document.documentElement.scrollHeight, { immediate: true, force: true });
+  lenis.stop();
+  document.documentElement.classList.add('exploring');
+  exUI.hidden = false;
+  const p = camera.position, d = camera.getWorldDirection(new THREE.Vector3());
+  explore.enter([p.x / P.FT + P.SIZE.w / 2, P.SIZE.d / 2 - p.z / P.FT], Math.atan2(-d.z, d.x), camera.fov);
+  dirty = true;
+}
+function leaveExplore() {
+  if (!explore.active) return;
+  explore.leave();
+  exUI.hidden = true;
+  document.documentElement.classList.remove('exploring');
+  lenis.start();
+  apply();
+  if (location.hash === '#explore') history.replaceState(null, '', location.pathname + location.search);
+}
+// on a phone the plan is a thumbnail: a tap enlarges it, picking a room shrinks it
+const planBox = document.getElementById('exPlanBox');
+const narrow = matchMedia('(max-width: 760px)');
+planBox.addEventListener('click', (e) => {
+  if (!narrow.matches) return;
+  if (!planBox.classList.contains('big')) { planBox.classList.add('big'); e.stopPropagation(); return; }
+  if (e.target.closest('.pl-room') || !e.target.closest('svg')) planBox.classList.remove('big');
+});
+ui.cta.addEventListener('click', enterExplore);
+document.getElementById('skip').addEventListener('click', (e) => { e.preventDefault(); enterExplore(); });
+document.getElementById('exBack').addEventListener('click', leaveExplore);
+addEventListener('keydown', (e) => { if (e.key === 'Escape') leaveExplore(); });
+if (location.hash === '#explore') enterExplore();
 
 // For recording and checking a single frame: casa.at(0.5) jumps there.
 window.casa = {
@@ -633,5 +693,8 @@ window.casa = {
   at(p) { tl.progress(p); apply(); dirty = true; render(); },
   scene, shared, camera, renderer,
   info: () => renderer.info,
+  get explore() { return explore; },
+  enterExplore: () => enterExplore(),
+  leaveExplore: () => leaveExplore(),
 };
 document.documentElement.classList.add('ready');

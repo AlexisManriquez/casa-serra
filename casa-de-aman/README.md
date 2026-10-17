@@ -15,7 +15,9 @@ Built from the starter prompt in [`../starter-prompt.md`](../starter-prompt.md),
 
 1. **Done:** the plan sheet, the walls rising, the roof landing, the front lawn, the porch, and the entry.
 2. **Done:** the living room (11' ceiling with a raised tray), out through the 12' slider to the rear porch, then the kitchen, a look into the butler's pantry, and the dining room. Recording: `media/checkpoint-2.mp4`.
-3. **Next:** the owner's notes on checkpoint 2.
+3. **Done:** explore mode. The scroll is the intro and ends at the dining table; from there **Explore the house** (or **Skip to explore** in the top bar, or `#explore` in the URL) lets you walk the house yourself. Every room has a standing spot or two, joined through the doorways: drag to look around, scroll or pinch to zoom, click a marker or the floor to walk there, or pick a room on the plan. Rooms not fitted out yet stay as the line drawing.
+4. **Next:** the master suite (bedroom, bath, closet).
+5. **Then:** bedrooms 2 and 3, bath 2, the powder room, laundry and mudbench.
 
 ## Run it locally
 
@@ -36,3 +38,4 @@ Plain files with no build step: three.js 0.160, GSAP ScrollTrigger and Lenis, al
 - `js/reveal.js`: the paper-to-material sweep and the black poché on cut walls, drawn only while the section plane is cutting.
 - `js/sheet.js`: the ink layer of the sheet, with room names, dimensions and door swings.
 - `js/main.js`: renderer, materials, lights, camera path and the scroll timeline. Outside, the camera orbits between keys; from the entry on, it walks (eye position and heading are interpolated), so it turns on the spot and stays off the walls.
+- `js/explore.js`: explore mode. The standing spots and the doorway paths between them, sight lines against the walls, walking, looking around, the markers and the clickable plan.

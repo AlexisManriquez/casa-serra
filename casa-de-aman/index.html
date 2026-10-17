@@ -31,7 +31,8 @@
 
   <header class="topbar">
     <a class="mark" href="#">Casa De AMan</a>
-    <p class="wip">Checkpoint 2 <span>· work in progress</span></p>
+    <p class="wip">Checkpoint 3 <span>· work in progress</span></p>
+    <a class="skip" id="skip" href="#explore">Skip to explore</a>
   </header>
 
   <section class="hero" id="hero" aria-label="Casa De AMan, first floor plan">
@@ -66,10 +67,23 @@
 
   <main class="track" id="track"></main>
 
-  <section class="end">
-    <p class="end__kicker">End of checkpoint 2</p>
-    <p class="end__text">That's the walk: in the front door, out to the back porch, and round through the kitchen and the butler's pantry to the dining table. Next: your notes, then a polish pass on light and phones.</p>
-  </section>
+  <button class="explore-cta" id="exploreCta" type="button">Explore the house <span aria-hidden="true">→</span></button>
+
+  <div class="explore" id="explore" hidden>
+    <div class="ex-markers" id="exMarkers"></div>
+    <aside class="ex-room" aria-live="polite">
+      <p class="ex-room__kicker">You are in</p>
+      <h2 class="ex-room__name" id="exRoom">Dining</h2>
+      <p class="ex-room__sf" id="exSf"></p>
+      <p class="ex-room__note" id="exNote" hidden>Still a line drawing. Its finishes come in a later checkpoint.</p>
+    </aside>
+    <figure class="ex-plan" id="exPlanBox">
+      <figcaption>First floor · pick a room</figcaption>
+      <svg id="exPlan" role="group" aria-label="First floor plan"></svg>
+    </figure>
+    <p class="ex-hint">Drag to look around · click a marker or the floor to walk · scroll to zoom</p>
+    <button class="ex-back" id="exBack" type="button"><span aria-hidden="true">↑</span> Back to the tour</button>
+  </div>
 
   <div class="nogl" id="nogl" hidden><p>This page builds the house in real time and needs WebGL 2.</p></div>
 

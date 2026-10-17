@@ -483,8 +483,8 @@ function living(b) {
   T.geo(b, new THREE.LatheGeometry([[0, 0], [0.18, 0.01], [0.2, 0.3], [0.1, 0.62], [0.08, 0.7], [0, 0.7]].map(([x, y]) => new THREE.Vector2(x, y)), 16),
     'ceramic', {}, new THREE.Matrix4().makeTranslation(0.9, 1.47, 0));
   foliage(b, T.sub(0.9, 2.1, 0), 7, 0.35, 21);
-  // side tables and lamps at the sofa's ends
-  for (const y of [37.0, 26.1]) {
+  // a side table and lamp at the sofa's far end
+  for (const y of [37.0]) {
     const S = place(59.4, y, 0);
     S.cyl(b, 0, 0, 0, 2.0, 0.85, 'walnut', { seg: 24, edges: true });
     S.cyl(b, 0, 0, 2.0, 2.06, 0.9, 'walnut', { seg: 24 });

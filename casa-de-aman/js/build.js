@@ -208,7 +208,7 @@ export class Batch {
 
 // A wall rectangle in plan feet, split around its openings. Exterior walls
 // are two layers: the skin (brick or board-and-batten) and the inner wall.
-function wallPieces(r, openings, height) {
+export function wallPieces(r, openings, height) {
   const [x0, y0, x1, y1] = r;
   const alongX = (x1 - x0) >= (y1 - y0);
   const a0 = alongX ? x0 : y0, a1 = alongX ? x1 : y1;

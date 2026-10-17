@@ -8,6 +8,7 @@
   --sans: "Inter", system-ui, sans-serif;
   --mono: "JetBrains Mono", ui-monospace, monospace;
   --gutter: clamp(16px, 3vw, 40px);
+  --cedar: #b0703c;
 }
 
 * { box-sizing: border-box; }
@@ -90,9 +91,88 @@ html.lenis, html.lenis body { height: auto; }
 @keyframes drip { 0% { transform: scaleX(0); transform-origin: left; } 50% { transform: scaleX(1); transform-origin: left; } 51% { transform-origin: right; } 100% { transform: scaleX(0); transform-origin: right; } }
 html.capture *, html.capture *::before { transition: none !important; animation: none !important; }
 
-.end { position: relative; z-index: 7; background: var(--paper); padding: 18vh var(--gutter); border-top: 1px solid var(--rule); }
-.end__kicker { font: 400 11px/1 var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft); margin: 0 0 18px; }
-.end__text { font: 400 clamp(26px, 3.4vw, 44px)/1.15 var(--serif); margin: 0; max-width: 28ch; }
+/* the hand-off at the end of the scroll */
+.skip {
+  position: absolute; right: var(--gutter); top: 44px; pointer-events: auto;
+  font: 400 11px/1 var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink);
+  text-decoration: underline; text-underline-offset: 3px;
+}
+.explore-cta {
+  position: fixed; z-index: 8; right: var(--gutter); bottom: 28px;
+  display: inline-flex; align-items: center; gap: 12px; padding: 15px 20px;
+  font: 400 24px/1 var(--serif); color: var(--paper); background: var(--ink); border: 0; cursor: pointer;
+  opacity: 0; translate: 0 12px; pointer-events: none; transition: opacity 0.5s ease, translate 0.5s ease, background 0.2s;
+}
+.explore-cta.on { opacity: 1; translate: 0 0; pointer-events: auto; }
+.explore-cta:hover { background: var(--cedar); }
+.explore-cta span { font-family: var(--mono); font-size: 16px; }
+:is(.explore-cta, .ex-back, .ex-mark, .skip):focus-visible, .pl-room:focus-visible { outline: 2px solid var(--cedar); outline-offset: 3px; }
+
+/* explore mode */
+html.exploring, html.exploring body { overflow: hidden; }
+html.exploring #gl { cursor: grab; touch-action: none; }
+html.exploring #gl:active { cursor: grabbing; }
+html.exploring :is(.stop, .ruler, .count, .hint, .hero, .titleblock, .wip, .skip, .explore-cta) { display: none; }
+.explore { position: fixed; inset: 0; z-index: 9; pointer-events: none; }
+.explore > :not(.ex-markers), .ex-mark { pointer-events: auto; }
+.ex-markers { position: absolute; inset: 0; overflow: hidden; }
+.ex-mark {
+  position: absolute; left: 0; top: 0; padding: 0; border: 0; background: none; cursor: pointer;
+  width: 0; height: 0; transform-origin: 0 0;
+}
+.ex-mark i {
+  position: absolute; left: -17px; top: -17px; width: 34px; height: 34px; border-radius: 50%;
+  border: 2px solid var(--paper); background: rgba(29, 29, 31, 0.28);
+  box-shadow: 0 0 0 1px rgba(29, 29, 31, 0.35), 0 4px 14px rgba(0, 0, 0, 0.25);
+  transition: background 0.2s, transform 0.2s;
+}
+.ex-mark i::after { content: ""; position: absolute; inset: 10px; border-radius: 50%; background: var(--paper); }
+.ex-mark:hover i { background: var(--cedar); transform: scale(1.12); }
+.ex-mark span {
+  position: absolute; left: 0; top: 24px; translate: -50% 0; white-space: nowrap;
+  font: 500 11px/1 var(--mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink);
+  background: var(--card); padding: 5px 7px; border: 1px solid var(--rule);
+}
+.ex-mark span:empty { display: none; }
+.ex-room {
+  position: absolute; left: var(--gutter); bottom: 28px; width: min(320px, calc(100vw - 2 * var(--gutter)));
+  padding: 14px 18px; background: var(--card); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  border: 1px solid var(--rule); pointer-events: none;
+}
+.ex-room__kicker { margin: 0 0 6px; font: 500 11px/1 var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft); }
+.ex-room__name { margin: 0; font: 400 34px/1 var(--serif); }
+.ex-room__sf { margin: 6px 0 0; font: 400 12px/1.4 var(--mono); color: var(--ink-soft); }
+.ex-room__sf:empty { display: none; }
+.ex-room__note { margin: 8px 0 0; font: 400 13px/1.45 var(--sans); }
+.ex-plan {
+  position: absolute; right: var(--gutter); bottom: 28px; margin: 0; width: clamp(220px, 26vw, 320px);
+  padding: 10px 12px 8px; background: var(--card); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  border: 1px solid var(--rule);
+}
+.ex-plan figcaption { font: 400 10px/1 var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft); margin: 0 0 8px; }
+.ex-plan svg { display: block; width: 100%; height: auto; }
+.pl-room { fill: var(--paper); stroke: none; cursor: pointer; transition: fill 0.2s; }
+.pl-room.is-fitted { fill: #ebe4d6; }
+.pl-room:hover { fill: #e0cdb4; }
+.pl-room.is-here { fill: #d9b48e; }
+.pl-walls rect { fill: var(--ink); }
+.pl-walls .pl-sill { fill: var(--ink-soft); }
+.pl-labels { pointer-events: none; }
+.pl-label { font: 1.35px "Architects Daughter", "Comic Neue", sans-serif; fill: var(--ink); text-anchor: middle; }
+.pl-me { pointer-events: none; }
+.pl-cone { fill: rgba(176, 112, 60, 0.35); }
+.pl-dot { fill: var(--cedar); stroke: var(--paper); stroke-width: 0.45; }
+.ex-hint {
+  position: absolute; left: 50%; top: 22px; translate: -50% 0; margin: 0; pointer-events: none;
+  font: 400 11px/1 var(--mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-soft);
+  white-space: nowrap;
+}
+.ex-back {
+  position: absolute; right: var(--gutter); top: 16px; display: inline-flex; gap: 8px; align-items: center;
+  padding: 9px 12px; font: 400 11px/1 var(--mono); letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--ink); background: var(--card); border: 1px solid var(--rule); cursor: pointer;
+}
+.ex-back:hover { background: var(--paper); }
 
 .nogl[hidden] { display: none; }
 .nogl { position: fixed; inset: 0; z-index: 40; display: grid; place-content: center; background: var(--paper); font: 16px var(--sans); padding: 24px; text-align: center; }
@@ -107,6 +187,17 @@ html.capture *, html.capture *::before { transition: none !important; animation:
   .hint { display: none; }
   .ruler, .count { display: none; }
   .wip span { display: none; }
+  .skip { top: 40px; }
+  .explore-cta { left: var(--gutter); right: var(--gutter); justify-content: center; bottom: 20px; }
+  .ex-hint { display: none; }
+  .ex-room { bottom: auto; top: 58px; padding: 10px 14px; width: auto; right: var(--gutter); }
+  .ex-room__name { font-size: 26px; }
+  .ex-plan { width: min(170px, 46vw); bottom: 16px; cursor: zoom-in; transition: width 0.3s ease; }
+  .ex-plan .pl-labels { display: none; }
+  .ex-plan.big { width: calc(100vw - 2 * var(--gutter)); cursor: auto; }
+  .ex-plan.big .pl-labels { display: inline; }
+  .ex-plan:not(.big) svg { pointer-events: none; }
+  .ex-back { top: 14px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
