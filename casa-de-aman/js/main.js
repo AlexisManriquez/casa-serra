@@ -510,7 +510,7 @@ tl.to(state, { hero: 1, duration: 6, ease: 'power1.in' }, 1.5)
 
 // stops shown along the way: [start, end] in timeline time
 const STOPS = [
-  { at: [58, 79], no: '01', name: 'Front porch', text: "23' × 8' · cedar posts on white brick, double doors with a transom" },
+  { at: [58, 79], no: '01', name: 'Front porch', text: "23' × 8' · cedar posts on white brick, stained wood double doors" },
   { at: [84, 101], no: '02', name: 'Entry', text: "136 sq ft · a 16' cased opening into the living room" },
   { at: [106, 129], no: '03', name: 'Living', text: "483 sq ft · an 11' ceiling with a raised tray, the fireplace between built-ins, a 12' four-panel slider" },
   { at: [135, 157], no: '04', name: 'Rear porch', text: "28' × 15' · cedar posts under a gable roof, out to the pines" },

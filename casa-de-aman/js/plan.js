@@ -35,7 +35,7 @@ export const extWalls = [
     open: [win(44.9, 6.5, 6, { pair: true, shutters: true })] },
   { id: 'diningRight', r: [51.37, 0, 52.2, 15.03], out: '+x', open: [] },
   { id: 'entryFront', r: [52.2, 14.2, 75.2, 15.03], out: '-y', skin: 'bb',
-    open: [win(56.3, 3, 6, { shutters: true }), { kind: 'front', at: 63.7, w: 6, sill: 0, head: 8 },
+    open: [win(56.3, 3, 6, { shutters: true }), { kind: 'front', at: 63.7, w: 6, sill: 0, head: 6.85 },
       win(70.8, 3, 6, { shutters: true })] },
   { id: 'bed3Left', r: [75.2, 0, 76.03, 15.03], out: '-x', open: [] },
   { id: 'bed3Front', r: [75.2, 0, 89.75, 0.83], out: '-y',

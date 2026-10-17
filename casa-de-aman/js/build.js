@@ -245,17 +245,10 @@ function buildOpening(batch, w, o) {
       }
     }
   } else if (o.kind === 'front') {
-    // double door 6068 with a transom to 8'
-    const doorHead = 6.67;
-    planBox(batch, f, s0, s1, fd, fd + 0.4, doorHead, doorHead + 0.18, 'woodDoor');
+    // double door 6068, no transom: the wall closes over the head jamb
     planBox(batch, f, s0, s1, fd, fd + 0.4, o.head - 0.18, o.head, 'woodDoor');
     planBox(batch, f, s0, s0 + 0.18, fd, fd + 0.4, 0, o.head, 'woodDoor');
     planBox(batch, f, s1 - 0.18, s1, fd, fd + 0.4, 0, o.head, 'woodDoor');
-    planBox(batch, f, s0 + 0.18, s1 - 0.18, fd + 0.18, fd + 0.2, doorHead + 0.18, o.head - 0.18, 'glass', { edges: false });
-    for (const t of [1 / 3, 2 / 3]) {
-      const s = s0 + 0.18 + (o.w - 0.36) * t;
-      planBox(batch, f, s - 0.05, s + 0.05, fd + 0.1, fd + 0.3, doorHead + 0.18, o.head - 0.18, 'woodDoor', { edges: false });
-    }
     // threshold
     planBox(batch, f, s0, s1, -0.1, EXT, -0.05, 0.03, 'stone', { edges: false });
     // lanterns either side
