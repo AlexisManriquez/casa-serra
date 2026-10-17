@@ -7,7 +7,7 @@ Built from the starter prompt in [`../starter-prompt.md`](../starter-prompt.md),
 ## Where things come from
 
 - **Layout:** `261013 Manriquez Plans.pdf`, sheet A-2, rev 01. Every wall, opening and room is typed into `js/plan.js` in feet, read off the plan's dimension strings. The garage keeps the side-entry 18' door from the plan.
-- **Finishes and colors:** the reference photo `IMG_20260126_110716.jpg`. That means white painted brick, white board-and-batten on the porch wall and the gables, charcoal architectural shingles, black window frames, cedar posts and shutters, and stained wood double doors.
+- **Finishes and colors:** the reference photo `IMG_20260126_110716.jpg`. That means white board-and-batten across the front and on the gables, white painted brick on the far ends of the house and the rear, charcoal architectural shingles, black window frames, cedar posts and shutters, and stained wood double doors.
 - **Fit-out:** the kitchen follows the cabinet codes on A-2: the range and the fridge on the pantry wall, the apron sink under the 3034 window, and an island with a prep sink, cabinets toward the range and stools toward the living room. The living room's fireplace sits between the two B42 built-ins. Finishes are a modern farmhouse reading of the photo: white shaker cabinets with black hardware, a stained wood island, granite tops, subway tile, white painted brick at the fireplace with a cedar mantel, and a sage butler's pantry with brass.
 - **Textures:** the brick, board-and-batten, shingles, concrete, mulch, granite, subway tile, book spines and the painting over the mantel are drawn in code (`js/textures.js`). Grass, oak, walnut, bark and fabrics are CC0 scans from Poly Haven, shared with the Casa Serra demo in `../assets/`.
 

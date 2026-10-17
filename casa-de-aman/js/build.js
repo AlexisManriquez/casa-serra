@@ -563,7 +563,7 @@ export function buildPorches(batch) {
   batch.pbox([x0, y0, x1, y1], GROUND, -0.12, 'porchSlab');
   // two steps' worth of drop at the front edge reads as one step
   for (const x of fp.posts) {
-    batch.pbox([x - 0.75, y0 + 0.15, x + 0.75, y0 + 1.65], -0.12, 2.2, 'brick');
+    batch.pbox([x - 0.75, y0 + 0.15, x + 0.75, y0 + 1.65], -0.12, 2.2, 'trim');
     batch.pbox([x - 0.85, y0 + 0.05, x + 0.85, y0 + 1.75], 2.2, 2.45, 'trim');
     batch.pbox([x - 0.3, y0 + 0.6, x + 0.3, y0 + 1.2], 2.45, 9.0, 'cedar');
   }

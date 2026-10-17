@@ -22,23 +22,25 @@ const door = (at, w, extra = {}) => ({ kind: 'door', at, w, sill: 0, head: 6.67,
 const cased = (at, w, head = 6.67) => ({ kind: 'open', at, w, sill: 0, head });
 
 // Exterior walls as rectangles [x0, y0, x1, y1] with the side that faces out.
+// The front of the house is board-and-batten; brick stays on the far ends
+// (the garage side and the bedroom side) and the rear.
 export const extWalls = [
-  { id: 'garageFront', r: [0, 4.1, 27.6, 4.93], out: '-y',
+  { id: 'garageFront', r: [0, 4.1, 27.6, 4.93], out: '-y', skin: 'bb',
     open: [win(4.6, 3, 6, { shutters: true }), win(23.1, 3, 6, { shutters: true })] },
   { id: 'left', r: [0, 4.1, 0.83, 63.125], out: '-x',
     open: [{ kind: 'garage', at: 16.5, w: 18, sill: 0, head: 8 }, win(53.8, 4, 4, { fixed: true })] },
-  { id: 'nookLeft', r: [26.77, 4.1, 27.6, 12.13], out: '+x', open: [] },
-  { id: 'pantryFront', r: [27.6, 11.3, 37.6, 12.13], out: '-y',
+  { id: 'nookLeft', r: [26.77, 4.1, 27.6, 12.13], out: '+x', skin: 'bb', open: [] },
+  { id: 'pantryFront', r: [27.6, 11.3, 37.6, 12.13], out: '-y', skin: 'bb',
     open: [win(32.6, 3, 4, { shutters: true })] },
-  { id: 'diningLeft', r: [37.6, 0, 38.43, 12.13], out: '-x', open: [] },
-  { id: 'diningFront', r: [37.6, 0, 52.2, 0.83], out: '-y',
+  { id: 'diningLeft', r: [37.6, 0, 38.43, 12.13], out: '-x', skin: 'bb', open: [] },
+  { id: 'diningFront', r: [37.6, 0, 52.2, 0.83], out: '-y', skin: 'bb',
     open: [win(44.9, 6.5, 6, { pair: true, shutters: true })] },
-  { id: 'diningRight', r: [51.37, 0, 52.2, 15.03], out: '+x', open: [] },
+  { id: 'diningRight', r: [51.37, 0, 52.2, 15.03], out: '+x', skin: 'bb', open: [] },
   { id: 'entryFront', r: [52.2, 14.2, 75.2, 15.03], out: '-y', skin: 'bb',
     open: [win(56.3, 3, 6, { shutters: true }), { kind: 'front', at: 63.7, w: 6, sill: 0, head: 6.85 },
       win(70.8, 3, 6, { shutters: true })] },
-  { id: 'bed3Left', r: [75.2, 0, 76.03, 15.03], out: '-x', open: [] },
-  { id: 'bed3Front', r: [75.2, 0, 89.75, 0.83], out: '-y',
+  { id: 'bed3Left', r: [75.2, 0, 76.03, 15.03], out: '-x', skin: 'bb', open: [] },
+  { id: 'bed3Front', r: [75.2, 0, 89.75, 0.83], out: '-y', skin: 'bb',
     open: [win(82.5, 6.5, 6, { pair: true, shutters: true })] },
   { id: 'right', r: [88.92, 0, 89.75, 43.17], out: '+x', open: [win(21.8, 4, 1, { fixed: true })] },
   { id: 'rear', r: [29.07, 42.34, 89.75, 43.17], out: '+y',
