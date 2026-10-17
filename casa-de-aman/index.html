@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Casa De AMan</title>
+  <meta name="description" content="The first floor plan of Casa De AMan becomes the house as you scroll: the walls rise out of the drawing, the roof lands, and you walk in through the front door." />
+  <meta name="theme-color" content="#f3f0e8" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23f3f0e8'/%3E%3Cpath d='M5 17 16 7l11 10M8 15v10h16V15' fill='none' stroke='%231d1d1f' stroke-width='2.4'/%3E%3C/svg%3E" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Architects+Daughter&family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"
+      }
+    }
+  </script>
+</head>
+<body>
+  <canvas id="gl" aria-hidden="true"></canvas>
+
+  <div class="loader" id="loader">
+    <p class="loader__title">Casa De AMan</p>
+    <p class="loader__line">Drawing the first floor plan</p>
+    <div class="loader__bar"><i><b id="loadFill"></b></i><span id="loadPct">0%</span></div>
+  </div>
+
+  <header class="topbar">
+    <a class="mark" href="#">Casa De AMan</a>
+    <p class="wip">Checkpoint 1 <span>· work in progress</span></p>
+  </header>
+
+  <section class="hero" id="hero" aria-label="Casa De AMan, first floor plan">
+    <p class="hero__kicker">Sheet A-2 <span>·</span> First floor plan</p>
+    <h1 class="hero__title">Casa<br /><em>De AMan</em></h1>
+    <p class="hero__lede">A white brick farmhouse among the Georgia pines. It starts here, as a drawing. Scroll, and walk in through the front door.</p>
+    <ul class="facts">
+      <li><b>3</b> bedrooms</li>
+      <li><b>2½</b> baths</li>
+      <li><b>3,692</b> sq ft heated</li>
+      <li><b>2.51</b> acres</li>
+    </ul>
+  </section>
+
+  <div class="titleblock" id="titleblock" aria-hidden="true">
+    <div><span>Project</span><b>Casa De AMan</b></div>
+    <div><span>Drawing</span><b>First floor plan</b></div>
+    <div><span>Scale</span><b>3/16" = 1'-0"</b></div>
+    <div><span>Sheet</span><b>A-2 rev 01</b></div>
+  </div>
+
+  <aside class="stop" id="stop" aria-live="polite">
+    <p class="stop__no" id="stopNo">01</p>
+    <h2 class="stop__name" id="stopName">Front porch</h2>
+    <p class="stop__text" id="stopText"></p>
+  </aside>
+
+  <nav class="ruler" aria-hidden="true"><i class="ruler__now" id="rulerNow"></i></nav>
+  <p class="count" id="count"><b>00</b> / 07 stops</p>
+
+  <div class="hint" id="hint">Scroll to walk in<i></i></div>
+
+  <main class="track" id="track"></main>
+
+  <section class="end">
+    <p class="end__kicker">End of checkpoint 1</p>
+    <p class="end__text">Next: the living room under its 11' ceiling, out through the 12' slider to the back porch, then the kitchen, the butler's pantry and the dining room.</p>
+  </section>
+
+  <div class="nogl" id="nogl" hidden><p>This page builds the house in real time and needs WebGL 2.</p></div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.13.0/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.13.0/ScrollTrigger.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.14/dist/lenis.min.js"></script>
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
