@@ -4,7 +4,7 @@
 // lit material shows. Walls also render their back faces in ink, so a wall
 // cut by the section plane reads as solid black poché, like on the sheet.
 import * as THREE from 'three';
-import { rooms, interiorMask, wx, wz } from './plan.js';
+import { rooms, interiorMask, wx, wz, wy } from './plan.js';
 
 export const PAPER = new THREE.Color('#f3f0e8');
 export const INK = new THREE.Color('#1d1d1f');
@@ -33,6 +33,10 @@ export const shared = {
   uPaper: { value: srgb(PAPER) },
   uInk: { value: srgb(INK) },
   uEdgeGlow: { value: 1 },
+  // rooms taller than the plate (the living room's tray): roofs are cut
+  // away below their ceiling, not just below the plate
+  uRoofHiRect: { value: worldRect(rooms.find((r) => r.tray).r, 0.25) },
+  uRoofHi: { value: wy(rooms.find((r) => r.tray).tray) + 0.02 },
 };
 
 // Rooms that share an id reveal together.
@@ -53,6 +57,8 @@ uniform vec4 uExtSweep;
 uniform vec3 uPaper;
 uniform vec3 uInk;
 uniform float uEdgeGlow;
+uniform vec4 uRoofHiRect;
+uniform float uRoofHi;
 uniform float uForceExt;
 uniform float uDiscard;
 uniform float uPoche;
@@ -110,7 +116,8 @@ const FRAG_HEAD = (src) => src
   if (uDiscard > 0.5 && rv < 0.01) discard;
   if (uHole > 0.5 || (uRoofCut > 0.0 && vRevealPos.y < uRoofCut)) {
     for (int i = 0; i < ${NM}; i++) { if (inRect(vRevealPos.xz, uMask[i])) discard; }
-  }`);
+  }
+  if (uRoofCut > 0.0 && vRevealPos.y < uRoofHi && inRect(vRevealPos.xz, uRoofHiRect)) discard;`);
 
 // Surfaces: after the lit colour is computed and tone mapped, mix toward
 // paper where the sweep has not arrived. A thin ink line rides the front.

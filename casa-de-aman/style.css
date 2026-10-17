@@ -17,7 +17,7 @@ html.lenis, html.lenis body { height: auto; }
 .lenis.lenis-smooth { scroll-behavior: auto !important; }
 
 #gl { position: fixed; inset: 0; width: 100vw; height: 100vh; display: block; }
-.track { height: 1100vh; }
+.track { height: 2460vh; }
 
 /* loader */
 .loader {

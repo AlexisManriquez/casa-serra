@@ -1,9 +1,11 @@
-// Casa De AMan, checkpoint 1: the plan sheet, the walls rising out of it,
-// the roof landing, the walk up to the front porch and into the entry.
+// Casa De AMan: the plan sheet, the walls rising out of it, the roof
+// landing, the walk in through the front door, the living room, out to the
+// rear porch, then the kitchen, the butler's pantry and the dining room.
 import * as THREE from 'three';
 import { RGBELoader } from 'three/addons/loaders/RGBELoader.js';
 import * as P from './plan.js';
 import * as B from './build.js';
+import * as F from './furnish.js';
 import { revealMaterial, inkMaterial, setRoomSweep, setExtSweep, PAPER, shared } from './reveal.js';
 import * as T from './textures.js';
 import { drawSheet, sheetObject } from './sheet.js';
@@ -104,6 +106,10 @@ function makeMaterials() {
   const leather = scanned('leather_red_02', 1.0);
   const stoneWall = scanned('rustic_stone_wall', 2.0);
   const plaster = scanned('white_stucco', 3.0);
+  const gran = T.granite(LOW ? 512 : 1024, aniso);
+  const tile = T.subway(LOW ? 512 : 1024, aniso);
+  const spines = T.bookSpines(LOW ? 256 : 512, aniso);
+  const n2 = (k) => new THREE.Vector2(k, k);
 
   const roofed = { ext: true, roofCut: wy(P.PLATE) + 0.01 };
   const C = { clip: true, poche: true };
@@ -139,7 +145,8 @@ function makeMaterials() {
     walnut: std({ ...walnut, roughness: 0.55 }, CI),
     linen: std({ ...linen, color: '#e3ddd2', roughness: 1 }, CI),
     rug: std({ ...rug, color: '#d8d0c2', roughness: 1 }, CI),
-    leather: std({ ...leather, color: new THREE.Color(0.8, 0.62, 0.5), roughness: 0.6 }, CI),
+    leather: std({ ...leather, color: new THREE.Color(1.25, 0.86, 0.62), roughness: 0.55 }, CI),
+    fireBrick: std({ ...brick, roughness: 0.92, color: '#f6f3ee' }, CI),
     stoneWall: std({ ...stoneWall, color: '#ffffff', roughness: 0.9 }, CI),
     porcelain: std({ color: '#f6f6f4', roughness: 0.15 }, CI),
     black: std({ color: '#1c1c1d', roughness: 0.6 }, { ...C, ext: true }),
@@ -153,6 +160,49 @@ function makeMaterials() {
     bark: std({ ...bark, roughness: 1 }, { ext: true, discard: true }),
     needles: std({ color: '#36432a', roughness: 1 }, { ext: true, discard: true }),
     shrub: std({ color: '#3f4c2c', roughness: 1 }, { ext: true, discard: true }),
+
+    // fitted rooms (furnish.js): casework, upholstery, fixtures
+    islandWood: std({ ...walnut, color: new THREE.Color(0.98, 0.62, 0.4), roughness: 0.5 }, CI),
+    pantryPaint: std({ color: '#6c7765', roughness: 0.5 }, CI),
+    granite: std({ ...gran, roughness: 0.16, normalScale: n2(0.3) }, CI),
+    hearth: std({ ...gran, color: '#8a8580', roughness: 0.55 }, CI),
+    subway: std({ ...tile, roughness: 0.12 }, CI),
+    hw: std({ color: '#151515', roughness: 0.38, metalness: 0.55 }, CI),
+    brass: std({ color: '#c49d5c', roughness: 0.28, metalness: 1 }, CI),
+    castIron: std({ color: '#1b1b1b', roughness: 0.75, metalness: 0.3 }, CI),
+    darkGlass: std({ color: '#0d0e0f', roughness: 0.08, metalness: 0.3 }, CI),
+    sofa: std({ ...linen, map: null, color: '#d6cab6', roughness: 1 }, CI),
+    pillowA: std({ ...linen, color: '#a8653f', roughness: 1 }, CI),
+    pillowB: std({ ...linen, color: '#5c6a73', roughness: 1 }, CI),
+    throw: std({ ...linen, map: null, color: '#e9e2d4', roughness: 1 }, CI),
+    chairLinen: std({ ...linen, map: null, color: '#d3c3a8', roughness: 1 }, CI),
+    drape: std({ ...linen, map: null, color: '#eee5d6', roughness: 1 }, CI),
+    rugBorder: std({ ...rug, color: '#7a7064', roughness: 1 }, CI),
+    rug2: std({ ...rug, color: '#c9ab92', roughness: 1 }, CI),
+    rug2Border: std({ ...rug, color: '#6b5244', roughness: 1 }, CI),
+    tableOak: std({ ...oak, color: new THREE.Color(0.92, 0.74, 0.58), roughness: 0.55 }, CI),
+    beam: std({ ...cedar }, CI),
+    soot: std({ color: '#121110', roughness: 1 }, CI),
+    logs: std({ ...bark, color: '#8a7360', roughness: 1 }, CI),
+    ember: std({ color: '#200800', emissive: new THREE.Color('#ff5a12'), emissiveIntensity: 2.4, roughness: 1 }, { ...CI, discard: true }),
+    flame: std({ color: '#000000', emissive: new THREE.Color('#ff5e14'), emissiveIntensity: 1.7, transparent: true, opacity: 0.6, depthWrite: false }, { clip: true, discard: true, interior: true }),
+    flameCore: std({ color: '#000000', emissive: new THREE.Color('#ffa63c'), emissiveIntensity: 1.8, transparent: true, opacity: 0.7, depthWrite: false }, { clip: true, discard: true, interior: true }),
+    art: std({ map: T.painting(768, 540), roughness: 0.75 }, CI),
+    books: std({ ...spines, roughness: 0.8 }, CI),
+    ceramic: std({ color: '#ede7dc', roughness: 0.35 }, CI),
+    pottery: std({ color: '#3e3b36', roughness: 0.7 }, CI),
+    basket: std({ ...linen, color: '#a8885a', roughness: 1, normalScale: n2(2) }, CI),
+    greenery: std({ color: '#4a5c35', roughness: 0.75 }, CI),
+    lemon: std({ color: '#e9c43c', roughness: 0.5 }, CI),
+    candle: std({ color: '#f3efe6', roughness: 0.6 }, CI),
+    iron: std({ color: '#161617', roughness: 0.45, metalness: 0.6 }, { interior: true }),
+    bulb: std({ color: '#fff2dc', emissive: new THREE.Color('#ffcf90'), emissiveIntensity: 2.6, roughness: 0.3 }, { interior: true }),
+    shadeIn: std({ color: '#f4efe6', emissive: new THREE.Color('#ffd9a6'), emissiveIntensity: 0.7, roughness: 0.6 }, { interior: true }),
+    teak: std({ ...cedarTex, color: new THREE.Color(1.0, 0.66, 0.44), roughness: 0.7 }, C),
+    cushion: std({ ...linen, map: null, color: '#e8e2d6', roughness: 1 }, C),
+    porchCeiling: std({ ...oak, color: new THREE.Color(1.15, 0.78, 0.55), roughness: 0.7 }, C),
+    rockerPaint: std({ color: '#1f2021', roughness: 0.55 }, C),
+    planter: std({ color: '#232425', roughness: 0.6 }, C),
   };
   // the ground circle has unit UVs; scale its tiling up to metres
   for (const k of ['map', 'normalMap', 'roughnessMap']) M.grass[k].repeat.set(640 / 3.2, 640 / 3.2);
@@ -165,7 +215,7 @@ const inkClip = inkMaterial();
 inkClip.clippingPlanes = clip;
 const inkFree = inkMaterial({ opacity: 0.85, ext: true, roofCut: wy(P.PLATE) + 0.01 });
 
-let M, roofGroup, ceilingGroup, doors, sheet, sky, sun;
+let M, roofGroup, ceilingGroup, doors, slider, pantryDoor, fire, sheet, sky, sun, lights;
 
 async function build() {
   M = makeMaterials();
@@ -174,6 +224,7 @@ async function build() {
   B.buildWalls(arch);
   B.buildInterior(arch);
   B.buildPorches(arch);
+  F.furnish(arch);
   scene.add(arch.toObject(M, inkClip));
 
   const roof = new B.Batch();
@@ -183,12 +234,19 @@ async function build() {
 
   const ceil = new B.Batch();
   B.buildCeilings(ceil);
-  ceilingGroup = ceil.toObject(M, null, { shadows: false });
+  F.fixtures(ceil);
+  ceilingGroup = ceil.toObject(M, inkClip, { shadows: false });
   ceilingGroup.traverse((o) => { if (o.isMesh) o.castShadow = false; });
   scene.add(ceilingGroup);
 
   doors = B.buildFrontDoors(M, inkClip);
   doors.forEach((d) => scene.add(d));
+  slider = B.buildSlider(M, inkClip);
+  slider.forEach((p) => scene.add(p));
+  pantryDoor = F.pantryDoor(M, inkClip, B.Batch);
+  scene.add(pantryDoor);
+  fire = F.fire(M);
+  scene.add(fire);
 
   const siteB = new B.Batch();
   const shrubs = B.buildSite(siteB);
@@ -241,6 +299,28 @@ async function build() {
   const porchLight = new THREE.PointLight(new THREE.Color('#ffc890'), 2.5, 6, 2);
   porchLight.position.set(wx(63.7), wy(6.3), wz(13.4));
   scene.add(porchLight);
+
+  // warm lamps in the rooms ahead, off until each room is revealed
+  const lamp = (color, max, dist, x, y, h) => {
+    const l = new THREE.PointLight(new THREE.Color(color), 0, dist, 2);
+    l.position.set(wx(x), wy(h), wz(y));
+    l.userData.max = max;
+    scene.add(l);
+    return l;
+  };
+  lights = {
+    living: lamp('#ffd2a0', 9, 13, 63.7, 31.6, 9.6),
+    fire: lamp('#ff8c40', 4, 6, 71.4, 31.55, 1.8),
+    kitchen: lamp('#ffd2a0', 7, 10, 45.85, 27.7, 5.5),
+    pantry: lamp('#ffd6a8', 5, 7, 32.6, 20.0, 8.6),
+    dining: lamp('#ffcd96', 6, 8, 45.2, 8.65, 5.8),
+    rear: lamp('#ffc890', 2.5, 7, 61.25, 50.7, 8.3),
+  };
+}
+
+function setSun(azDeg, elDeg) {
+  const az = THREE.MathUtils.degToRad(azDeg), el = THREE.MathUtils.degToRad(elDeg);
+  sun.position.set(Math.sin(az) * Math.cos(el), Math.sin(el), Math.cos(az) * Math.cos(el)).multiplyScalar(80);
 }
 
 // ------------------------------------------------------------------ camera path
@@ -259,8 +339,11 @@ function fitDist(w, h, fov, aspect) {
 function eye(pos, look, fov) {
   const d = pos.clone().sub(look);
   const dist = d.length();
-  return { target: look, az: THREE.MathUtils.radToDeg(Math.atan2(d.x, d.z)), el: THREE.MathUtils.radToDeg(Math.asin(d.y / dist)), dist, fov };
+  return { target: look, az: THREE.MathUtils.radToDeg(Math.atan2(d.x, d.z)), el: THREE.MathUtils.radToDeg(Math.asin(d.y / dist)), dist, fov,
+    pos, yaw: Math.atan2(-d.x, -d.z), pitch: Math.asin(-d.y / dist) };
 }
+// a point in plan feet at height h
+const at = (x, y, h) => V(wx(x), wy(h), wz(y));
 
 // keep the horizontal view of eye-level shots on tall screens
 function adaptFov(fov, aspect) {
@@ -297,8 +380,20 @@ function makeKeys(aspect) {
     eye(V(wx(63.7), wy(5.3), wz(7.2)), V(wx(63.7), wy(5.6), wz(26)), adaptFov(54, aspect)),
     eye(V(wx(63.7), wy(5.3), wz(13.2)), V(wx(63.2), wy(0), wz(22.5)), adaptFov(60, aspect)),
     eye(V(wx(68.2), wy(5.3), wz(16.4)), V(wx(56.5), wy(2.6), wz(26)), adaptFov(60, aspect)),
+    // checkpoint 2: from here the camera walks (see placeCamera)
+    eye(at(55.6, 22.4, 5.4), at(71.5, 34.0, 4.0), adaptFov(58, aspect)),         // 8 living
+    eye(at(62.0, 37.0, 5.4), at(63.4, 52.0, 4.6), adaptFov(56, aspect)),         // 9 the slider
+    eye(at(61.6, 46.4, 5.3), at(73.0, 60.0, 4.8), adaptFov(58, aspect)),         // 10 rear porch
+    eye(at(61.2, 55.6, 5.2), at(62.5, 80.0, 6.8), adaptFov(58, aspect)),         // 11 the pines
+    eye(at(62.9, 44.2, 5.4), at(52.0, 34.0, 4.5), adaptFov(56, aspect)),         // 12 (passing) the slider
+    eye(at(54.0, 34.2, 5.4), at(41.5, 28.4, 3.8), adaptFov(56, aspect)),         // 13 kitchen
+    eye(at(48.5, 15.8, 5.4), at(45.3, 42.3, 4.6), adaptFov(50, aspect)),         // 14 the sink wall
+    eye(at(41.9, 16.5, 5.3), at(29.0, 17.4, 4.2), adaptFov(54, aspect)),         // 15 pantry
+    eye(at(50.4, 19.0, 5.5), at(44.0, 2.0, 4.2), adaptFov(58, aspect)),          // 16 dining
+    eye(at(49.4, 17.2, 5.5), at(44.0, 1.0, 4.8), adaptFov(54, aspect)),          // 17 out the windows
   ];
 }
+const WALK = 7;   // keys from here on are interpolated as a walk
 
 // Monotone cubic through integer knots, so nothing overshoots between keys.
 function monotone(values, t) {
@@ -319,7 +414,8 @@ function monotone(values, t) {
 
 const UP_Y = V(0, 1, 0), UP_PLAN = V(0, 0, -1);
 function placeCamera(t) {
-  const ch = (f) => KEYS.map(f);
+  if (t > WALK) return walkCamera(t - WALK);
+  const ch = (f) => KEYS.slice(0, WALK + 1).map(f);
   const tx = monotone(ch((k) => k.target.x), t);
   const ty = monotone(ch((k) => k.target.y), t);
   const tz = monotone(ch((k) => k.target.z), t);
@@ -338,13 +434,42 @@ function placeCamera(t) {
   camera.updateProjectionMatrix();
 }
 
+// Indoors the camera walks: the eye position and the heading are
+// interpolated, not an orbit, so it turns on the spot and keeps off walls.
+function walkCamera(t) {
+  const keys = KEYS.slice(WALK);
+  const yaws = [];
+  keys.forEach((k, i) => {
+    let y = k.yaw;
+    if (i) while (y - yaws[i - 1] > Math.PI) y -= 2 * Math.PI;
+    if (i) while (y - yaws[i - 1] < -Math.PI) y += 2 * Math.PI;
+    yaws.push(y);
+  });
+  const ch = (f) => keys.map(f);
+  const yaw = monotone(yaws, t), pitch = monotone(ch((k) => k.pitch), t);
+  camera.position.set(monotone(ch((k) => k.pos.x), t), monotone(ch((k) => k.pos.y), t), monotone(ch((k) => k.pos.z), t));
+  const fov = 2 * Math.atan(Math.exp(monotone(ch((k) => Math.log(Math.tan(THREE.MathUtils.degToRad(k.fov) / 2))), t)));
+  camera.up.copy(UP_Y);
+  camera.fov = THREE.MathUtils.radToDeg(fov);
+  camera.near = 0.12;
+  camera.far = 1400;
+  camera.lookAt(camera.position.clone().add(V(Math.sin(yaw) * Math.cos(pitch), Math.sin(pitch), Math.cos(yaw) * Math.cos(pitch))));
+  camera.updateProjectionMatrix();
+}
+
 // ------------------------------------------------------------------ the scroll
 
 const state = {
   hero: 0, cam: 0, cut: wy(4), roof: 1, ink: 1, ext: 0, sky: 0, door: 0, entry: 0,
+  living: 0, slider: 0, sun: 0, kitchen: 0, pantry: 0, dining: 0,
 };
 const DOOR_W = V(wx(63.7), 0, wz(14.2));
 const ENTRY_C = V(wx(63.7), wy(4), wz(15.4));
+// where each room's sweep starts: the opening the camera comes through
+const SWEEP = {
+  living: [at(63.7, 20.6, 4), 11], kitchen: [at(51.8, 31.0, 4), 12],
+  pantry: [at(37.8, 17.0, 4), 8], dining: [at(45.0, 14.2, 4), 8],
+};
 
 const tl = gsap.timeline({ paused: true, defaults: { ease: 'none' } });
 tl.to(state, { hero: 1, duration: 6, ease: 'power1.in' }, 1.5)
@@ -364,12 +489,34 @@ tl.to(state, { hero: 1, duration: 6, ease: 'power1.in' }, 1.5)
   .to(state, { cam: 6, duration: 7, ease: 'sine.inOut' }, 79)
   .to(state, { entry: 1, duration: 9, ease: 'power1.inOut' }, 82)
   .to(state, { cam: 7, duration: 9, ease: 'sine.inOut' }, 89)
-  .to({}, { duration: 4 }, 98);
+  // checkpoint 2
+  .to(state, { cam: 8, duration: 12, ease: 'sine.inOut' }, 100)
+  .to(state, { living: 1, duration: 11, ease: 'power1.inOut' }, 101)
+  .to(state, { sun: 1, duration: 12, ease: 'sine.inOut' }, 100)
+  .to(state, { cam: 9, duration: 11, ease: 'sine.inOut' }, 118)
+  .to(state, { slider: 1, duration: 8, ease: 'power1.inOut' }, 124)
+  .to(state, { cam: 10, duration: 12, ease: 'sine.inOut' }, 131)
+  .to(state, { cam: 11, duration: 10, ease: 'sine.inOut' }, 145)
+  .to(state, { cam: 13, duration: 15, ease: 'sine.inOut' }, 159)
+  .to(state, { kitchen: 1, duration: 11, ease: 'power1.inOut' }, 164)
+  .to(state, { sun: 0, duration: 13, ease: 'sine.inOut' }, 166)
+  .to(state, { cam: 14, duration: 11, ease: 'sine.inOut' }, 180)
+  .to(state, { cam: 15, duration: 11, ease: 'sine.inOut' }, 195)
+  .to(state, { pantry: 1, duration: 9, ease: 'power1.inOut' }, 199)
+  .to(state, { cam: 16, duration: 13, ease: 'sine.inOut' }, 212)
+  .to(state, { dining: 1, duration: 11, ease: 'power1.inOut' }, 214)
+  .to(state, { cam: 17, duration: 9, ease: 'sine.inOut' }, 227)
+  .to({}, { duration: 5 }, 236);
 
 // stops shown along the way: [start, end] in timeline time
 const STOPS = [
   { at: [58, 79], no: '01', name: 'Front porch', text: "23' × 8' · cedar posts on white brick, double doors with a transom" },
-  { at: [84, 103], no: '02', name: 'Entry', text: "136 sq ft · a 16' cased opening into the living room" },
+  { at: [84, 101], no: '02', name: 'Entry', text: "136 sq ft · a 16' cased opening into the living room" },
+  { at: [106, 129], no: '03', name: 'Living', text: "483 sq ft · an 11' ceiling with a raised tray, the fireplace between built-ins, a 12' four-panel slider" },
+  { at: [135, 157], no: '04', name: 'Rear porch', text: "28' × 15' · cedar posts under a gable roof, out to the pines" },
+  { at: [168, 196], no: '05', name: 'Kitchen', text: "393 sq ft · custom cabinets, granite tops, a 10' island, the sink under the window" },
+  { at: [201, 214], no: '06', name: "Butler's pantry", text: '165 sq ft · glass-front uppers, a second sink and a coffee station, off the kitchen' },
+  { at: [220, 242], no: '07', name: 'Dining', text: '197 sq ft · a table for ten under an iron chandelier, the front lawn through the windows' },
 ];
 
 const ui = {
@@ -399,9 +546,30 @@ function apply() {
     sky.visible = state.sky > 0.001;
     sky.position.copy(camera.position);
     scene.background = state.sky > 0.999 ? null : PAPER;
+    // once the sky is in, drop the paper well under the grass, out of its depth
+    sheet.userData.base.position.y = state.sky > 0.999 ? -3 : -0.17;
   }
   setExtSweep(DOOR_W, state.ext <= 0 ? 0 : 0.5 + state.ext * state.ext * 420);
   setRoomSweep('entry', ENTRY_C, state.entry * 9);
+  for (const id in SWEEP) setRoomSweep(id, SWEEP[id][0], state[id] * SWEEP[id][1]);
+  if (lights) {
+    for (const id of ['living', 'kitchen', 'pantry', 'dining']) lights[id].intensity = lights[id].userData.max * state[id];
+    const flick = 0.85 + 0.1 * Math.sin(t * 7.3) + 0.05 * Math.sin(t * 17.1);
+    lights.fire.intensity = lights.fire.userData.max * state.living * flick;
+    lights.rear.intensity = lights.rear.userData.max * state.slider;
+    fire.children.forEach((f, i) => { if (f.userData.h) f.scale.y = P.FT * (0.85 + 0.2 * Math.sin(t * (5 + i) + i * 2)); });
+    slider.forEach((p) => { p.position.x = p.userData.open * state.slider; });
+    // from inside, the window tint that reads dark from the lawn would make
+    // the view out look dull; thin it once the walk is past the entry
+    M.glass.opacity = M.glassExt.opacity = 0.32 - 0.18 * state.living;
+    setSun(38 + state.sun * 44, 21 - state.sun * 7);
+    // a lower sun throws longer shadows: widen the shadow camera with it
+    const sc = sun.shadow.camera, k = 1 + state.sun * 0.6;
+    if (sc.right !== 24 * k) {
+      sc.left = -24 * k; sc.right = 24 * k; sc.top = 20 * k; sc.bottom = -20 * k; sc.far = 160 + state.sun * 60;
+      sc.updateProjectionMatrix();
+    }
+  }
   shared.uEdgeGlow.value = 1;
 
   ui.hero.style.opacity = String(1 - state.hero);

@@ -59,6 +59,47 @@ export class Batch {
       .forEach(([a, b]) => this.edges.push(...c[a], ...c[b]));
   }
   line(a, b) { this.edges.push(a.x, a.y, a.z, b.x, b.y, b.z); }
+  // Any BufferGeometry, placed by a world matrix. UVs are projected in
+  // metres like poly(), per triangle, from its dominant normal axis.
+  // `edges` is a crease angle in degrees for ink lines (0 for none).
+  geo(geometry, matrix, key, { edges = 0, keepUV = false } = {}) {
+    const g = geometry.index ? geometry.toNonIndexed() : geometry.clone();
+    g.applyMatrix4(matrix);
+    if (!g.attributes.normal) g.computeVertexNormals();
+    const flip = matrix.determinant() < 0;
+    const b = this.bucket(key);
+    const p = g.attributes.position, n = g.attributes.normal;
+    for (let t = 0; t < p.count; t += 3) {
+      const order = flip ? [0, 2, 1] : [0, 1, 2];
+      let sx = 0, sy = 0, sz = 0;
+      for (let k = 0; k < 3; k++) { sx += n.getX(t + k); sy += n.getY(t + k); sz += n.getZ(t + k); }
+      const ax = Math.abs(sx), ay = Math.abs(sy), az = Math.abs(sz);
+      const base = b.pos.length / 3;
+      for (const k of order) {
+        const i = t + k;
+        const x = p.getX(i), y = p.getY(i), z = p.getZ(i);
+        b.pos.push(x, y, z);
+        b.nor.push(n.getX(i), n.getY(i), n.getZ(i));
+        if (keepUV) b.uv.push(g.attributes.uv.getX(i), g.attributes.uv.getY(i));
+        else if (ay >= ax && ay >= az) b.uv.push(x, z);
+        else if (ax >= az) b.uv.push(-z * Math.sign(sx || 1), y);
+        else b.uv.push(x * Math.sign(sz || 1), y);
+      }
+      b.idx.push(base, base + 1, base + 2);
+    }
+    if (edges) this.edges.push(...new THREE.EdgesGeometry(g, edges).attributes.position.array);
+    g.dispose();
+  }
+  // Convex polygon from plan points [x, y, h] (feet), wound so its normal
+  // points away from `inside` (also [x, y, h]).
+  ppoly(pts, key, inside, opts = {}) {
+    const W = ([x, y, h]) => new THREE.Vector3(wx(x), wy(h), wz(y));
+    let v = pts.map(W);
+    const n = new THREE.Vector3().subVectors(v[1], v[0]).cross(new THREE.Vector3().subVectors(v[2], v[0]));
+    if (n.dot(new THREE.Vector3().subVectors(v[0], W(inside))) < 0) v = v.reverse();
+    this.poly(v, key, opts.uv);
+    if (opts.edges !== false) v.forEach((p, i) => this.line(p, v[(i + 1) % v.length]));
+  }
   // Box from plan feet: [x0, y0, x1, y1], heights in feet.
   pbox([x0, y0, x1, y1], h0, h1, m, opts) {
     this.box([Math.min(wx(x0), wx(x1)), wy(h0), Math.min(wz(y0), wz(y1))],
@@ -186,8 +227,12 @@ function buildOpening(batch, w, o) {
       planBox(batch, f, s0, s1, fd + 0.02, fd + 0.24, mid - 0.07, mid + 0.07, 'frame');
     }
     planBox(batch, f, s0 + fw, s1 - fw, fd + 0.14, fd + 0.16, o.sill + fw, o.head - fw, 'glass', { edges: false });
-    // interior trim: stool and casing, white
+    // interior trim: stool, apron and casing, white
     planBox(batch, f, s0 - 0.3, s1 + 0.3, EXT - 0.02, EXT + 0.08, o.sill - 0.08, o.sill, 'trim', { edges: false });
+    planBox(batch, f, s0 - 0.2, s1 + 0.2, EXT - 0.02, EXT + 0.04, o.sill - 0.4, o.sill - 0.08, 'trim', { edges: false });
+    planBox(batch, f, s0 - 0.29, s0, EXT - 0.02, EXT + 0.04, o.sill, o.head + 0.29, 'trim', { edges: false });
+    planBox(batch, f, s1, s1 + 0.29, EXT - 0.02, EXT + 0.04, o.sill, o.head + 0.29, 'trim', { edges: false });
+    planBox(batch, f, s0, s1, EXT - 0.02, EXT + 0.04, o.head, o.head + 0.29, 'trim', { edges: false });
     if (o.shutters) {
       const sw = o.pair ? 1.65 : o.w / 2 + 0.05;
       for (const [a, b] of [[s0 - 0.12 - sw, s0 - 0.12], [s1 + 0.12, s1 + 0.12 + sw]]) {
@@ -227,14 +272,48 @@ function buildOpening(batch, w, o) {
     planBox(batch, f, s1, s1 + 0.2, -0.05, 0.42, 0, o.head, 'trim', { edges: false });
     planBox(batch, f, s0, s1, -0.05, EXT, GROUND, 0, 'concrete', { edges: false });
   } else if (o.kind === 'slider') {
-    planBox(batch, f, s0, s1, fd, fd + 0.35, o.head - fw, o.head, 'frame');
-    planBox(batch, f, s0, s1, fd, fd + 0.35, 0, 0.12, 'frame');
-    for (let i = 0; i <= 4; i++) {
-      const s = s0 + (o.w * i) / 4;
-      planBox(batch, f, Math.max(s0, s - 0.09), Math.min(s1, s + 0.09), fd, fd + 0.35, 0, o.head, 'frame');
-    }
-    planBox(batch, f, s0, s1, fd + 0.16, fd + 0.18, 0.12, o.head - fw, 'glass', { edges: false });
+    // the frame only; the four panels are their own objects (buildSlider)
+    planBox(batch, f, s0, s1, fd, fd + 0.42, o.head - fw, o.head, 'frame');
+    planBox(batch, f, s0, s1, fd, fd + 0.42, 0, 0.1, 'frame');
+    planBox(batch, f, s0, s0 + fw, fd, fd + 0.42, 0, o.head, 'frame');
+    planBox(batch, f, s1 - fw, s1, fd, fd + 0.42, 0, o.head, 'frame');
+    planBox(batch, f, s0 - 0.3, s1 + 0.3, EXT - 0.02, EXT + 0.06, o.head, o.head + 0.33, 'trim', { edges: false });
   }
+}
+
+// The 12' slider to the rear porch, OXXO: the outer panels are fixed on the
+// outside track; the middle two run on the inside track and slide open over
+// them. Returns the panels with userData.open, the travel in metres.
+export function buildSlider(materials, ink) {
+  const w = P.extWalls.find((e) => e.id === 'rear');
+  const o = w.open.find((q) => q.kind === 'slider');
+  const f = frameFor(w);
+  const s0 = o.at - o.w / 2 + 0.16, s1 = o.at + o.w / 2 - 0.16;
+  const pw = (s1 - s0) / 4 + 0.12;     // panels overlap at the meeting stiles
+  const fd = 0.33, st = 0.19, top = o.head - 0.16;
+  const panels = [];
+  for (let i = 0; i < 4; i++) {
+    const b = new Batch();
+    const a = i === 3 ? s1 - pw : i === 0 ? s0 : s0 + i * (s1 - s0) / 4 - 0.06;
+    const e = a + pw;
+    const inner = i === 1 || i === 2;
+    const d0 = fd + (inner ? 0.24 : 0.06), d1 = d0 + 0.12;
+    const box = (sa, sb, h0, h1, m, opts) => planBoxRaw(b, f, sa, sb, d0, d1, h0, h1, m, opts);
+    box(a, a + st, 0.1, top, 'frameExt');
+    box(e - st, e, 0.1, top, 'frameExt');
+    box(a + st, e - st, 0.1, 0.42, 'frameExt');
+    box(a + st, e - st, top - st, top, 'frameExt');
+    planBoxRaw(b, f, a + st, e - st, d0 + 0.05, d0 + 0.07, 0.42, top - st, 'glassExt', { edges: false });
+    if (inner) {
+      // a pull on the meeting stile, both faces
+      const hs = i === 1 ? e - 0.1 : a + 0.1;
+      planBoxRaw(b, f, hs - 0.03, hs + 0.03, d0 - 0.08, d1 + 0.08, 3.1, 4.1, 'lamp', { edges: false });
+    }
+    const g = b.toObject(materials, ink);
+    g.userData.open = inner ? (i === 1 ? -1 : 1) * (pw - 0.3) * FT : 0;
+    panels.push(g);
+  }
+  return panels;
 }
 
 // The front doors are their own objects so they can swing open.
@@ -302,15 +381,79 @@ export function buildInterior(batch) {
     const m = r.id === 'garage' ? 'garageFloor' : ['mbath', 'bath2', 'powder', 'laundry'].includes(r.id) ? 'tile' : ['bed2', 'bed3', 'mbed', 'closets', 'mcloset'].includes(r.id) ? 'carpet' : 'oak';
     batch.pbox(r.r, -0.02, 0, m === 'oak' ? 'floor' : m, { edges: false, skip: ['ny', 'px', 'nx', 'pz', 'nz'] });
   }
-  // baseboards in the entry
-  const e = P.rooms.find((r) => r.id === 'entry').r;
-  batch.pbox([e[0], e[1], 59.0, e[1] + 0.06], 0, 0.42, 'trim', { edges: false });
-  batch.pbox([68.4, e[1], e[2], e[1] + 0.06], 0, 0.42, 'trim', { edges: false });
+  // baseboards wherever a wall meets the floor, and casings on the openings
+  for (const r of P.rooms) if (!['garage', 'closets'].includes(r.id)) baseboards(batch, r.r);
+  for (const w of P.intWalls) for (const o of w.open) casing(batch, w.r, o);
+}
+
+// Spans [a0, a1] of a room edge where some wall stands on the floor.
+function solidSpans(alongX, coord, a0, a1) {
+  const spans = [];
+  for (const w of [...P.extWalls, ...P.intWalls]) {
+    const [x0, y0, x1, y1] = w.r;
+    if (((x1 - x0) >= (y1 - y0)) !== alongX) continue;
+    const faces = alongX ? [y0, y1] : [x0, x1];
+    if (!faces.some((f) => Math.abs(f - coord) < 0.12)) continue;
+    for (const piece of wallPieces(w.r, w.open, PLATE)) {
+      if (piece.h0 !== 0) continue;
+      const [px0, py0, px1, py1] = piece.r;
+      const lo = Math.max(alongX ? px0 : py0, a0), hi = Math.min(alongX ? px1 : py1, a1);
+      if (hi - lo > 0.05) spans.push([lo, hi]);
+    }
+  }
+  return spans;
+}
+
+function baseboards(batch, [x0, y0, x1, y1]) {
+  const t = 0.06, h = 0.42;
+  for (const [s0, s1] of solidSpans(true, y0, x0, x1)) batch.pbox([s0, y0, s1, y0 + t], 0, h, 'trim', { edges: false });
+  for (const [s0, s1] of solidSpans(true, y1, x0, x1)) batch.pbox([s0, y1 - t, s1, y1], 0, h, 'trim', { edges: false });
+  for (const [s0, s1] of solidSpans(false, x0, y0, y1)) batch.pbox([x0, s0, x0 + t, s1], 0, h, 'trim', { edges: false });
+  for (const [s0, s1] of solidSpans(false, x1, y0, y1)) batch.pbox([x1 - t, s0, x1, s1], 0, h, 'trim', { edges: false });
+}
+
+// Flat 3 1/2" casing on both faces of an interior opening, and a jamb.
+function casing(batch, [x0, y0, x1, y1], o) {
+  const alongX = (x1 - x0) >= (y1 - y0);
+  const c = 0.29, p = 0.05, s0 = o.at - o.w / 2, s1 = o.at + o.w / 2;
+  const box = (a, b, h0, h1, d0, d1) => batch.pbox(alongX ? [a, d0, b, d1] : [d0, a, d1, b], h0, h1, 'trim', { edges: false });
+  const [f0, f1] = alongX ? [y0, y1] : [x0, x1];
+  for (const [d0, d1] of [[f0 - p, f0], [f1, f1 + p]]) {
+    box(s0 - c, s0, 0, o.head + c, d0, d1);
+    box(s1, s1 + c, 0, o.head + c, d0, d1);
+    box(s0, s1, o.head, o.head + c, d0, d1);
+  }
+  box(s0, s0 + 0.04, 0, o.head, f0, f1);
+  box(s1 - 0.04, s1, 0, o.head, f0, f1);
+  box(s0, s1, o.head - 0.04, o.head, f0, f1);
 }
 
 // Ceilings at the plate, one per room, so each stays drawn until revealed.
+// A room with its own `ceiling` height (the living room) has its walls
+// carried up to it and a raised tray in the middle.
 export function buildCeilings(batch) {
-  for (const r of P.rooms) batch.pbox(r.r, PLATE - 0.01, PLATE, 'ceiling', { edges: false, skip: ['py', 'px', 'nx', 'pz', 'nz'] });
+  const down = { edges: false, skip: ['py', 'px', 'nx', 'pz', 'nz'] };
+  for (const r of P.rooms) {
+    if (!r.ceiling) { batch.pbox(r.r, PLATE - 0.01, PLATE, 'ceiling', down); continue; }
+    const [x0, y0, x1, y1] = r.r, c = r.ceiling, t = r.tray, k = 3.2;
+    // the walls from the plate up, as a skin on the room side
+    batch.pbox([x0 - 0.06, y0, x0, y1], PLATE - 0.02, c, 'drywall', { edges: false });
+    batch.pbox([x1, y0, x1 + 0.06, y1], PLATE - 0.02, c, 'drywall', { edges: false });
+    batch.pbox([x0, y0 - 0.06, x1, y0], PLATE - 0.02, c, 'drywall', { edges: false });
+    batch.pbox([x0, y1, x1, y1 + 0.06], PLATE - 0.02, c, 'drywall', { edges: false });
+    // ceiling band around the tray, the tray's sides, its ceiling, crown
+    const [ix0, iy0, ix1, iy1] = [x0 + k, y0 + k, x1 - k, y1 - k];
+    for (const q of [[x0, y0, x1, iy0], [x0, iy1, x1, y1], [x0, iy0, ix0, iy1], [ix1, iy0, x1, iy1]]) batch.pbox(q, c - 0.01, c, 'ceiling', down);
+    for (const q of [[ix0, iy0 - 0.02, ix1, iy0], [ix0, iy1, ix1, iy1 + 0.02], [ix0 - 0.02, iy0, ix0, iy1], [ix1, iy0, ix1 + 0.02, iy1]]) {
+      batch.pbox(q, c - 0.01, t, 'ceiling', { edges: false });
+    }
+    batch.pbox([ix0, iy0, ix1, iy1], t - 0.01, t, 'ceiling', down);
+    for (const q of [[ix0 - 0.3, iy0 - 0.3, ix1 + 0.3, iy0], [ix0 - 0.3, iy1, ix1 + 0.3, iy1 + 0.3],
+      [ix0 - 0.3, iy0, ix0, iy1], [ix1, iy0, ix1 + 0.3, iy1]]) batch.pbox(q, c - 0.3, c, 'trim', { edges: false });
+    for (const q of [[x0, y0, x1, y0 + 0.25], [x0, y1 - 0.25, x1, y1], [x0, y0, x0 + 0.25, y1], [x1 - 0.25, y0, x1, y1]]) {
+      batch.pbox(q, c - 0.35, c, 'trim', { edges: false });
+    }
+  }
   // simple drum light in the entry
   const c = [63.7, 17.7];
   batch.pbox([c[0] - 0.9, c[1] - 0.9, c[0] + 0.9, c[1] + 0.9], PLATE - 1.6, PLATE - 0.9, 'lampShade');
@@ -439,6 +582,9 @@ export function buildPorches(batch) {
     batch.pbox([x - 0.3, ry1 - 1.2, x + 0.3, ry1 - 0.6], -0.12, 9.0, 'cedar');
   }
   batch.pbox([rx0, ry1 - 1.3, rx1, ry1 - 0.5], 9.0, 9.85, 'cedar');
+  // side beams, post to post, so the eaves sit on wood, not in the air
+  batch.pbox([rx0 + 0.3, ry0, rx0 + 0.9, ry1 - 1.3], 9.0, 9.85, 'cedar');
+  batch.pbox([rx1 - 0.9, ry0, rx1 - 0.3, ry1 - 1.3], 9.0, 9.85, 'cedar');
   batch.pbox([rx0 + 0.3, ry0, rx0 + 0.9, ry0 + 0.6], -0.12, 9.0, 'cedar');
   batch.pbox([rx1 - 0.9, ry0, rx1 - 0.3, ry0 + 0.6], -0.12, 9.0, 'cedar');
 }
