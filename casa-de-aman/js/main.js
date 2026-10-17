@@ -536,6 +536,7 @@ function apply() {
   const t = tl.time();
   placeCamera(state.cam);
   cutPlane.constant = state.cut;
+  shared.uSection.value = state.cut < 50 ? 1 : 0;
   if (roofGroup) {
     roofGroup.position.y = state.roof * 9;
     roofGroup.visible = state.roof < 0.999;

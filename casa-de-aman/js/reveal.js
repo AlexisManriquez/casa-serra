@@ -33,6 +33,9 @@ export const shared = {
   uPaper: { value: srgb(PAPER) },
   uInk: { value: srgb(INK) },
   uEdgeGlow: { value: 1 },
+  // 1 while the section plane cuts the walls: only then do back faces read
+  // as poché. Once it lifts, a back face is an open shell seen from inside.
+  uSection: { value: 1 },
   // rooms taller than the plate (the living room's tray): roofs are cut
   // away below their ceiling, not just below the plate
   uRoofHiRect: { value: worldRect(rooms.find((r) => r.tray).r, 0.25) },
@@ -57,6 +60,7 @@ uniform vec4 uExtSweep;
 uniform vec3 uPaper;
 uniform vec3 uInk;
 uniform float uEdgeGlow;
+uniform float uSection;
 uniform vec4 uRoofHiRect;
 uniform float uRoofHi;
 uniform float uForceExt;
@@ -136,7 +140,7 @@ function patchSurface(shader, flags) {
     vec3 n = normalize(vRevealN);
     float shade = 0.93 + 0.07 * n.y - 0.035 * abs(n.x);
     vec3 drawn = uPaper * shade;
-    if (uPoche > 0.5 && !gl_FrontFacing) {
+    if (uPoche > 0.5 && uSection > 0.5 && !gl_FrontFacing) {
       gl_FragColor = vec4(uInk, 1.0);
     } else {
       gl_FragColor.rgb = mix(drawn, gl_FragColor.rgb, rv);

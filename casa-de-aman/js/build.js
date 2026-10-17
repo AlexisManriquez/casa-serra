@@ -13,6 +13,7 @@ export class Batch {
   constructor() {
     this.buckets = new Map();
     this.edges = [];
+    this.rects = [];
   }
   bucket(key) {
     if (!this.buckets.has(key)) this.buckets.set(key, { pos: [], nor: [], uv: [], idx: [] });
@@ -37,21 +38,89 @@ export class Batch {
     for (let i = 1; i < pts.length - 1; i++) b.idx.push(base, base + i, base + i + 1);
   }
   // Axis-aligned box in world metres. `m` is a material key or a per-face map
-  // {px, nx, py, ny, pz, nz}. `skip` lists faces to leave out.
+  // {px, nx, py, ny, pz, nz}. `skip` lists faces to leave out. The faces are
+  // held as rectangles until toObject, which resolves the ones that coincide.
   box(min, max, m, opts = {}) {
     const f = (k) => (typeof m === 'string' ? m : m[k] ?? m.other);
     const [x0, y0, z0] = min, [x1, y1, z1] = max;
-    const V = (x, y, z) => new THREE.Vector3(x, y, z);
+    // axis, side, plane coordinate, and the rectangle on the other two axes
     const faces = {
-      px: [V(x1, y0, z1), V(x1, y0, z0), V(x1, y1, z0), V(x1, y1, z1)],
-      nx: [V(x0, y0, z0), V(x0, y0, z1), V(x0, y1, z1), V(x0, y1, z0)],
-      py: [V(x0, y1, z1), V(x1, y1, z1), V(x1, y1, z0), V(x0, y1, z0)],
-      ny: [V(x0, y0, z0), V(x1, y0, z0), V(x1, y0, z1), V(x0, y0, z1)],
-      pz: [V(x0, y0, z1), V(x1, y0, z1), V(x1, y1, z1), V(x0, y1, z1)],
-      nz: [V(x1, y0, z0), V(x0, y0, z0), V(x0, y1, z0), V(x1, y1, z0)],
+      px: [0, 1, x1, [y0, z0, y1, z1]], nx: [0, -1, x0, [y0, z0, y1, z1]],
+      py: [1, 1, y1, [x0, z0, x1, z1]], ny: [1, -1, y0, [x0, z0, x1, z1]],
+      pz: [2, 1, z1, [x0, y0, x1, y1]], nz: [2, -1, z0, [x0, y0, x1, y1]],
     };
-    for (const k in faces) if (!opts.skip?.includes(k)) this.poly(faces[k], f(k), opts.uv);
+    for (const k in faces) {
+      if (opts.skip?.includes(k)) continue;
+      const [axis, side, c, r] = faces[k];
+      this.rects.push({ axis, side, c, r, key: f(k), uv: opts.uv });
+    }
     if (opts.edges !== false) this.boxEdges(min, max);
+  }
+  // A rectangle of an axis-aligned plane as a polygon facing `side`.
+  rectPoly({ axis, side, c }, [a0, b0, a1, b1], key, uv) {
+    const [i, j] = axis === 0 ? [1, 2] : axis === 1 ? [0, 2] : [0, 1];
+    const P = (a, b) => {
+      const v = new THREE.Vector3();
+      v.setComponent(axis, c).setComponent(i, a).setComponent(j, b);
+      return v;
+    };
+    let pts = [P(a0, b0), P(a1, b0), P(a1, b1), P(a0, b1)];
+    const n = new THREE.Vector3().subVectors(pts[1], pts[0]).cross(new THREE.Vector3().subVectors(pts[2], pts[0]));
+    if (n.getComponent(axis) * side < 0) pts = pts.reverse();
+    this.poly(pts, key, uv);
+  }
+  // Box faces that share a plane z-fight, and when the section cuts the
+  // boxes, the paper face of one shows through the poché of the other. Where
+  // two solids meet back to back, both faces are internal and go. Where faces
+  // overlap facing the same way (wall layers at a corner), the larger one
+  // keeps the overlap. Glass and paper-only materials take no part.
+  resolveRects(materials) {
+    const solidKey = new Map();
+    const solid = (key) => {
+      if (!solidKey.has(key)) {
+        const mat = materials[key];
+        solidKey.set(key, !!mat && !mat.transparent && !mat.userData.reveal?.discard);
+      }
+      return solidKey.get(key);
+    };
+    const planes = new Map();
+    this.rects.forEach((q, i) => {
+      q.i = i;
+      q.area = (q.r[2] - q.r[0]) * (q.r[3] - q.r[1]);
+      q.solid = solid(q.key);
+      const k = q.axis + ':' + Math.round(q.c * 1e5);
+      if (!planes.has(k)) planes.set(k, []);
+      planes.get(k).push(q);
+    });
+    const E = 1e-6;
+    for (const list of planes.values()) {
+      for (const q of list) {
+        let pieces = [q.r];
+        if (q.solid) {
+          for (const o of list) {
+            if (o === q || !o.solid) continue;
+            const [c0, d0, c1, d1] = o.r;
+            if (c0 >= q.r[2] - E || c1 <= q.r[0] + E || d0 >= q.r[3] - E || d1 <= q.r[1] + E) continue;
+            if (o.side === q.side && (o.area < q.area || (o.area === q.area && o.i > q.i))) continue;
+            const next = [];
+            for (const p of pieces) {
+              const [a0, b0, a1, b1] = p;
+              const ia0 = Math.max(a0, c0), ib0 = Math.max(b0, d0), ia1 = Math.min(a1, c1), ib1 = Math.min(b1, d1);
+              if (ia1 - ia0 <= E || ib1 - ib0 <= E) { next.push(p); continue; }
+              // what is left of p around the overlap: below, above, left, right
+              if (ib0 - b0 > E) next.push([a0, b0, a1, ib0]);
+              if (b1 - ib1 > E) next.push([a0, ib1, a1, b1]);
+              if (ia0 - a0 > E) next.push([a0, ib0, ia0, ib1]);
+              if (a1 - ia1 > E) next.push([ia1, ib0, a1, ib1]);
+            }
+            pieces = next;
+            if (!pieces.length) break;
+          }
+        }
+        for (const p of pieces) this.rectPoly(q, p, q.key, q.uv);
+      }
+    }
+    this.rects = [];
   }
   boxEdges([x0, y0, z0], [x1, y1, z1]) {
     const c = [[x0, y0, z0], [x1, y0, z0], [x1, y0, z1], [x0, y0, z1], [x0, y1, z0], [x1, y1, z0], [x1, y1, z1], [x0, y1, z1]];
@@ -106,6 +175,7 @@ export class Batch {
       [Math.max(wx(x0), wx(x1)), wy(h1), Math.max(wz(y0), wz(y1))], m, opts);
   }
   toObject(materials, inkMat, { shadows = true } = {}) {
+    this.resolveRects(materials);
     const g = new THREE.Group();
     for (const [key, b] of this.buckets) {
       if (!b.idx.length) continue;

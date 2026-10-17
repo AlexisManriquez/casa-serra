@@ -48,6 +48,15 @@ function place(cx, cy, dir) {
   return new Local(M);
 }
 
+// A round bowl with a wall, rim at y = 0: a closed solid, so its inside
+// never shows as a back face.
+function bowlGeo(r, seg, t = 0.04) {
+  const pts = [];
+  for (let i = 0; i <= 8; i++) { const a = (i / 8) * Math.PI / 2; pts.push([r * Math.sin(a), -r * Math.cos(a)]); }
+  for (let i = 8; i >= 0; i--) { const a = (i / 8) * Math.PI / 2; pts.push([(r - t) * Math.sin(a), -(r - t) * Math.cos(a)]); }
+  return new THREE.LatheGeometry(pts.map(([x, y]) => new THREE.Vector2(x, y)), seg);
+}
+
 class Local {
   constructor(M) { this.M = M; }
   // child frame: offset (x, y, z) and a turn about the vertical (degrees)
@@ -297,8 +306,7 @@ function kitchen(b) {
   faucet(b, place(45.85, sinkC, 180), 'hw', 0.7);
   // a bowl of lemons and a cutting board
   const bowl = place(46.6, 30.6, 0);
-  bowl.geo(b, new THREE.SphereGeometry(0.45, 20, 10, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2), 'ceramic', {},
-    new THREE.Matrix4().makeTranslation(0, TOP + 0.48, 0));
+  bowl.geo(b, bowlGeo(0.45, 20), 'ceramic', {}, new THREE.Matrix4().makeTranslation(0, TOP + 0.48, 0));
   const lr = rng(5);
   for (let i = 0; i < 6; i++) {
     const a = i * 1.1, rr = i === 5 ? 0 : 0.2;
@@ -564,8 +572,7 @@ function dining(b) {
   diningChair(b, place(45.2, 14.05, -90), 'leather');
   // a runner, candlesticks and a low bowl of greens on the table
   T.box(b, -0.6, 0.6, 2.55, 2.56, -3.8, 3.8, 'throw', { edges: false });
-  T.geo(b, new THREE.SphereGeometry(0.6, 20, 8, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2), 'ceramic', {},
-    new THREE.Matrix4().makeTranslation(0, 3.15, 0));
+  T.geo(b, bowlGeo(0.6, 20), 'ceramic', {}, new THREE.Matrix4().makeTranslation(0, 3.15, 0));
   foliage(b, T.sub(0, 3.2, 0), 9, 0.32, 41);
   for (const z of [-1.6, 1.6]) {
     T.cyl(b, 0, z, 2.56, 3.3, 0.06, 'brass', { seg: 10, r1: 0.12 });
@@ -657,7 +664,9 @@ export function pantryDoor(materials, ink, BatchCls) {
 function porch(b) {
   // a tongue-and-groove cedar ceiling under the white soffit
   const [rx0, ry0, rx1, ry1] = P.porches.rear.r;
-  b.pbox([rx0, ry0, rx1, ry1 - 0.5], 9.8, 9.83, 'porchCeiling', { edges: false, skip: ['py'] });
+  // a closed board: seen from above before the roof lands, an open one
+  // would show its back face
+  b.pbox([rx0, ry0, rx1, ry1 - 0.5], 9.8, 9.83, 'porchCeiling', { edges: false });
   // an outdoor sofa against the house and a pair of lounge chairs
   const S = place(49.9, 50.6, 0);
   outdoorSofa(b, S, 7.2);

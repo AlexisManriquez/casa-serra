@@ -31,8 +31,8 @@ Plain files with no build step: three.js 0.160, GSAP ScrollTrigger and Lenis, al
 ## Files
 
 - `js/plan.js`: the house as data. Walls, openings, rooms, roofs, furniture and site, all in plan feet.
-- `js/build.js`: turns the data into geometry, batched per material, with ink edges. Also the slider's four panels, which slide open.
+- `js/build.js`: turns the data into geometry, batched per material, with ink edges. Box faces that share a plane are merged first (faces between two solids go, overlapping faces keep the larger one), so wall corners and cut poché don't z-fight. Also the slider's four panels, which slide open.
 - `js/furnish.js`: the fitted rooms: cabinet runs, the range, hood and fridge, the island, the fireplace and built-ins, the sofa and chairs, the dining table and chairs, the porch furniture, and the hanging fixtures (pendants, chandelier, fans, cans).
-- `js/reveal.js`: the paper-to-material sweep and the black poché on cut walls.
+- `js/reveal.js`: the paper-to-material sweep and the black poché on cut walls, drawn only while the section plane is cutting.
 - `js/sheet.js`: the ink layer of the sheet, with room names, dimensions and door swings.
 - `js/main.js`: renderer, materials, lights, camera path and the scroll timeline. Outside, the camera orbits between keys; from the entry on, it walks (eye position and heading are interpolated), so it turns on the spot and stays off the walls.
