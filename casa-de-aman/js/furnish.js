@@ -1,7 +1,8 @@
 // The fitted rooms: the living room, the kitchen, the butler's pantry, the
 // dining room and the rear porch (checkpoint 2), the master suite
-// (checkpoint 4), and bedrooms 2 and 3, bath 2, the powder room, the laundry
-// and the mudbench hall (checkpoint 5). Cabinet runs follow the codes on sheet A-2 (B27, SB36,
+// (checkpoint 4), bedrooms 2 and 3, bath 2, the powder room, the laundry
+// and the mudbench hall (checkpoint 5), and the garage and the storage room
+// (checkpoint 6). Cabinet runs follow the codes on sheet A-2 (B27, SB36,
 // W3642 ...); the rest is sized like the real thing. All in plan feet, like
 // plan.js.
 import * as THREE from 'three';
@@ -1499,11 +1500,359 @@ function hall(b) {
   for (const x of [25.2, 22.4, 19.6]) b.pbox([x - 0.04, st.y1 - 0.2, x + 0.04, st.y1], rail(x) - 0.14, rail(x) - 0.06, 'hw', { edges: false });
 }
 
+// ---------------------------------------------------------------- garage
+
+// A wheel on an axle across local x: the tyre, a dark disc with five
+// silver spokes and a rim ring on the outer face, a hub cap. `side` is the
+// way the outer face looks (+1 or -1).
+function wheel(b, L, x, z, r, w, side) {
+  const S = L.sub(x, r, z);
+  S.geo(b, new THREE.CylinderGeometry(r, r, w, 28).rotateZ(Math.PI / 2), 'tire');
+  const f = side * (w / 2);
+  S.geo(b, new THREE.CylinderGeometry(r * 0.66, r * 0.66, 0.04, 24).rotateZ(Math.PI / 2).translate(f, 0, 0), 'castIron');
+  S.geo(b, new THREE.TorusGeometry(r * 0.64, r * 0.05, 6, 32).rotateY(Math.PI / 2).translate(f, 0, 0), 'steel');
+  for (let i = 0; i < 5; i++) S.sub(f + side * 0.03, 0, 0, 0, i * 72).box(b, -0.025, 0.025, r * 0.12, r * 0.62, -r * 0.07, r * 0.07, 'steel', { edges: false });
+  S.geo(b, new THREE.CylinderGeometry(r * 0.14, r * 0.14, 0.06, 14).rotateZ(Math.PI / 2).translate(f + side * 0.05, 0, 0), 'steel');
+}
+
+// A side profile [u forward, v up] extruded across local x to a width w,
+// with rounded edges. The bevel grows the outline by about 3/4 of `bevel`.
+function profile(pts, w, bevel) {
+  const s = new THREE.Shape(pts.map(([u, v]) => new THREE.Vector2(u, v)));
+  const d = w - 2 * bevel;
+  const g = new THREE.ExtrudeGeometry(s, { depth: d, bevelEnabled: true, bevelThickness: bevel, bevelSize: bevel * 0.75, bevelSegments: 3, curveSegments: 12 });
+  return g.rotateY(-Math.PI / 2).translate(d / 2, 0, 0);
+}
+
+// The car: a mid-size SUV in slate blue, parked nose in toward the house.
+// The body and the cabin are side profiles extruded across the width; the
+// glass, lamps, grille and wheels are laid on them. L stands on the floor
+// under the middle of the car, z toward the nose. 16' long, 6'-4" wide.
+function suv(b, L) {
+  const arch = (cx) => {
+    const out = [[cx - 1.69, 0.94]];
+    for (let i = 0; i <= 12; i++) {
+      const a = Math.PI * (1 - i / 12);
+      out.push([cx + 1.69 * Math.cos(a), 1.2 + 1.69 * Math.sin(a)]);
+    }
+    return [...out, [cx + 1.69, 0.94]];
+  };
+  const rearX = -4.7, frontX = 4.8;
+  L.geo(b, profile([[-7.6, 0.94], ...arch(rearX), ...arch(frontX), [7.6, 0.94], [7.81, 1.3], [7.81, 2.55], [7.55, 3.05],
+    [3.4, 3.62], [-7.3, 3.62], [-7.75, 3.4], [-7.81, 1.3]], 6.3, 0.25), 'carPaint');
+  L.geo(b, profile([[-7.35, 3.5], [3.2, 3.5], [0.35, 5.55], [-6.55, 5.62], [-7.1, 5.2]], 5.5, 0.3), 'carPaint');
+  // the windscreen and the rear window lie on the slopes of the cabin
+  L.sub(0, 4.73, 1.92, 0, -54.3).box(b, -2.25, 2.25, -1.42, 1.42, -0.02, 0.02, 'darkGlass', { edges: false });
+  L.sub(0, 4.54, -7.45, 0, 8.4).box(b, -2.05, 2.05, -0.62, 0.62, -0.02, 0.02, 'darkGlass', { edges: false });
+  // side windows on the flat of the cabin: front door, rear door, quarter
+  const front = (v) => 2.75 - 1.39 * (v - 3.5), rear = (v) => -6.95 + 0.147 * (v - 3.5);
+  const v0 = 3.95, v1 = 5.25;
+  const panes = [
+    [[-1.1, v0], [front(v0), v0], [front(v1), v1], [-1.1, v1]],
+    [[-4.45, v0], [-1.45, v0], [-1.45, v1], [-4.45, v1]],
+    [[rear(v0), v0], [-4.95, v0], [-4.95, v1], [rear(v1) + 0.35, v1]],
+  ];
+  for (const side of [-1, 1]) {
+    for (const p of panes) {
+      const g = new THREE.ExtrudeGeometry(new THREE.Shape(p.map(([u, v]) => new THREE.Vector2(u, v))), { depth: 0.03, bevelEnabled: false })
+        .rotateY(-Math.PI / 2).translate(side > 0 ? 2.78 : -2.75, 0, 0);
+      L.geo(b, g, 'darkGlass');
+    }
+    const x = side * 3.15, o = side * 0.02;
+    // a black sill and arch trim, the door shuts, handles and a mirror
+    L.box(b, Math.min(x, x + o * 2), Math.max(x, x + o * 2), 0.78, 1.35, rearX + 1.75, frontX - 1.75, 'hw', { edges: false });
+    for (const u of [2.95, -1.28, -4.45]) L.box(b, Math.min(x, x + o), Math.max(x, x + o), 1.2, 3.75, u - 0.02, u + 0.02, 'hw', { edges: false });
+    for (const u of [1.0, -2.5]) L.box(b, Math.min(x, x + o * 3), Math.max(x, x + o * 3), 3.2, 3.32, u - 0.28, u + 0.28, 'hw', { edges: false });
+    L.box(b, Math.min(side * 2.9, side * 3.75), Math.max(side * 2.9, side * 3.75), 3.85, 4.35, 2.35, 2.9, 'carPaint', { r: 0.1 });
+    L.box(b, Math.min(side * 3.1, side * 3.7), Math.max(side * 3.1, side * 3.7), 3.9, 4.3, 2.33, 2.36, 'darkGlass', { edges: false });
+    // roof rails
+    L.box(b, Math.min(side * 2.05, side * 2.2), Math.max(side * 2.05, side * 2.2), 5.82, 5.98, -6.1, 0.0, 'hw', { r: 0.03 });
+    // lamps: headlamps, tail lamps
+    L.box(b, Math.min(side * 1.85, side * 2.95), Math.max(side * 1.85, side * 2.95), 2.55, 2.92, 7.62, 7.99, 'lens', { r: 0.06 });
+    L.box(b, Math.min(side * 2.1, side * 3.05), Math.max(side * 2.1, side * 3.05), 3.0, 3.45, -8.02, -7.8, 'tailLight', { r: 0.05 });
+    wheel(b, L, side * 2.72, rearX, 1.2, 0.85, side);
+    wheel(b, L, side * 2.72, frontX, 1.2, 0.85, side);
+  }
+  // grille, bumpers and the plate
+  L.box(b, -1.7, 1.7, 1.55, 2.48, 7.86, 8.04, 'hw', { r: 0.04 });
+  L.box(b, -1.7, 1.7, 2.0, 2.06, 8.04, 8.07, 'steel', { edges: false });
+  L.box(b, -2.85, 2.85, 0.82, 1.32, 7.6, 8.06, 'hw', { r: 0.08 });
+  L.box(b, -2.95, 2.95, 0.82, 1.42, -8.06, -7.6, 'hw', { r: 0.08 });
+  L.box(b, -0.5, 0.5, 2.0, 2.5, -8.05, -8.0, 'porcelain', { edges: false });
+}
+
+// A riding mower, nose toward z: a red hood and rear body over a charcoal
+// frame and deck, big wheels at the back, a black seat and a wheel.
+function mower(b, L) {
+  const m = 'mowerPaint';
+  L.box(b, -2.15, 2.15, 0.32, 0.72, -0.4, 1.45, 'castIron', { r: 0.12 });
+  L.box(b, -0.75, 0.75, 0.72, 1.12, -2.35, 2.55, 'castIron');
+  L.box(b, -1.0, 1.0, 0.9, 1.0, -0.55, 0.6, 'hw');
+  L.box(b, -0.85, 0.85, 1.1, 2.25, 0.55, 2.7, m, { r: 0.25 });
+  L.box(b, -0.62, 0.62, 1.3, 2.0, 2.66, 2.74, 'hw', { edges: false });
+  L.box(b, -1.05, 1.05, 1.05, 2.05, -2.5, -0.55, m, { r: 0.2 });
+  for (const s of [-1, 1]) L.box(b, Math.min(s * 1.0, s * 1.78), Math.max(s * 1.0, s * 1.78), 1.98, 2.12, -2.55, -0.45, m, { r: 0.05 });
+  L.box(b, -0.75, 0.75, 2.05, 2.4, -1.65, -0.5, 'tire', { r: 0.12 });
+  L.sub(0, 2.3, -1.6, 0, -12).box(b, -0.72, 0.72, 0, 1.0, -0.16, 0.08, 'tire', { r: 0.1 });
+  strut(b, L, [0, 2.2, 0.75], [0, 3.05, 0.2], 0.05, 'hw');
+  L.geo(b, new THREE.TorusGeometry(0.5, 0.05, 8, 28).rotateX(-Math.PI / 2 + 0.55), 'hw', {}, new THREE.Matrix4().makeTranslation(0, 3.08, 0.17));
+  for (const s of [-1, 1]) {
+    wheel(b, L, s * 1.38, -1.5, 0.95, 0.7, s);
+    wheel(b, L, s * 1.0, 1.9, 0.55, 0.45, s);
+  }
+}
+
+// A rolling trash cart: a tub, a lid with a lip, the handle and two wheels
+// at the back, toward the wall. L faces out into the garage.
+function cart(b, L, m) {
+  L.box(b, -0.95, 0.95, 0.35, 3.4, -1.1, 1.1, m, { r: 0.08 });
+  L.box(b, -1.02, 1.02, 3.4, 3.55, -1.2, 1.25, m, { r: 0.05 });
+  L.box(b, -0.8, 0.8, 3.25, 3.45, -1.34, -1.12, m, { r: 0.04 });
+  for (const x of [-0.82, 0.82]) L.geo(b, new THREE.CylinderGeometry(0.32, 0.32, 0.18, 16).rotateZ(Math.PI / 2), 'tire', {}, new THREE.Matrix4().makeTranslation(x, 0.32, -1.0));
+}
+
+// A bike hung by its front wheel on the wall at x = wall, its frame in the
+// plane y = s. Bike points are [a, c]: a along the bike from the rear hub,
+// c up from the hubs. Hung, a runs up the wall and c out from it.
+function hungBike(b, wall, s, paint) {
+  const R = 1.12, h0 = 1.55, off = R + 0.12;
+  const pt = ([a, c]) => [wall - off - c, s, h0 + a];
+  const rod = (p, q, r, m = paint) => planRod(b, pt(p), pt(q), r, m);
+  const ring = (p, rad, tube, m) => {
+    const [x, y, h] = pt(p);
+    const g = new THREE.TorusGeometry(rad, tube, 8, 44);
+    b.geo(g, new THREE.Matrix4().compose(new THREE.Vector3(wx(x), wy(h), wz(y)), new THREE.Quaternion(), new THREE.Vector3(FT, FT, FT)), m);
+    g.dispose();
+  };
+  const Rh = [0, 0], F = [3.45, 0], BB = [1.35, -0.22], S = [1.05, 1.75], H = [3.2, 1.95], HB = [3.33, 1.45];
+  for (const c of [Rh, F]) {
+    ring(c, R, 0.07, 'tire');
+    ring(c, R - 0.09, 0.03, 'steel');
+    for (let i = 0; i < 12; i++) {
+      const a = (i / 12) * Math.PI * 2;
+      rod(c, [c[0] + Math.cos(a) * (R - 0.1), c[1] + Math.sin(a) * (R - 0.1)], 0.008, 'steel');
+    }
+  }
+  rod(Rh, BB, 0.05); rod(Rh, S, 0.045); rod(BB, S, 0.07); rod(S, H, 0.07); rod(BB, HB, 0.08); rod(HB, H, 0.08);
+  rod(HB, F, 0.06, 'castIron');
+  rod(S, [0.95, 2.3], 0.045, 'steel');
+  rod([0.55, 2.38], [1.3, 2.4], 0.13, 'tire');
+  rod(H, [3.15, 2.45], 0.05, 'steel');
+  ring(BB, 0.33, 0.03, 'steel');
+  rod([BB[0] - 0.55, BB[1]], [BB[0] + 0.55, BB[1]], 0.04, 'castIron');
+  const [bx, , bh] = pt([3.15, 2.45]);
+  planRod(b, [bx, s - 0.85, bh], [bx, s + 0.85, bh], 0.045, 'castIron');
+  for (const k of [-1, 1]) planRod(b, [bx, s + k * 0.85, bh], [bx, s + k * 0.55, bh], 0.07, 'tire');
+  // the hook through the top of the front wheel
+  const top = h0 + F[0] + R - 0.05;
+  planRod(b, [wall, s, top + 0.25], [wall - off, s, top + 0.25], 0.04, 'castIron');
+  planRod(b, [wall - off, s, top + 0.25], [wall - off, s, top - 0.05], 0.04, 'castIron');
+}
+
+const LIDS = ['mowerPaint', 'navyPaint', 'pantryPaint', 'castIron'];
+
+// What sits on a storage shelf from s0 to s1 at height h, depth d, under
+// `top`: lidded bins, cardboard boxes, now and then a row of paint cans.
+function shelfStuff(b, fr, s0, s1, h, d, top, r, { cans = true } = {}) {
+  let s = s0 + 0.1;
+  const room = top - h - 0.15;
+  while (s < s1 - 0.7) {
+    const k = r(), w = Math.min(s1 - 0.1 - s, 1.3 + r() * 0.6);
+    if (k < 0.45) {
+      const hh = Math.min(room, 0.95 + r() * 0.35);
+      fr.box(b, s, s + w, 0.12, d - 0.1, h, h + hh - 0.1, 'bin', { r: 0.04 });
+      fr.box(b, s - 0.03, s + w + 0.03, 0.09, d - 0.07, h + hh - 0.12, h + hh, LIDS[Math.floor(r() * LIDS.length)], { r: 0.03 });
+      s += w + 0.12;
+    } else if (k < 0.85 || !cans) {
+      const hh = Math.min(room, 0.7 + r() * 0.6);
+      fr.box(b, s, s + w, 0.1 + r() * 0.25, d - 0.05, h, h + hh, 'cardboard');
+      if (r() < 0.4 && room - hh > 0.6) fr.box(b, s + 0.15, s + w - 0.2, 0.25, d - 0.15, h + hh, h + hh + 0.5, 'cardboard');
+      s += w + 0.1;
+    } else {
+      for (let i = 0; i < 3 && s < s1 - 0.6; i++) {
+        fr.at(s + 0.3, d / 2).cyl(b, 0, 0, h, h + 0.62, 0.28, 'steel', { seg: 16 });
+        s += 0.62;
+      }
+      s += 0.15;
+    }
+  }
+}
+
+// Shelving on a wall: uprights at the ends and every four feet, and
+// shelves at `levels`. Wood (pine) or a black steel rack.
+function shelving(b, fr, s0, s1, d, levels, m, r, opts) {
+  const t = m === 'castIron' ? 0.08 : 0.15, top = levels[levels.length - 1];
+  const n = Math.max(1, Math.round((s1 - s0) / 4));
+  for (let i = 0; i <= n; i++) {
+    const s = Math.min(s1 - t, s0 + i * (s1 - s0) / n);
+    for (const [d0, d1] of [[0.05, 0.05 + t], [d - t, d]]) fr.box(b, s, s + t, d0, d1, 0, top + 0.07, m);
+  }
+  levels.forEach((h, i) => {
+    fr.box(b, s0, s1, 0.05, d, h, h + 0.07, m === 'castIron' ? 'steel' : m);
+    if (i < levels.length - 1) shelfStuff(b, fr, s0 + t, s1 - t, h + 0.07, d, levels[i + 1], r, opts);
+  });
+}
+
+function garage(b) {
+  const r = rng(271);
+  suv(b, place(11.3, 21.6, 0));
+  mower(b, place(6.0, 10.8, 180));
+  cart(b, place(2.3, 6.3, 90), 'cartPlastic');
+  cart(b, place(4.5, 6.3, 90), 'cartPlastic');
+  // the 4068 pair to the storage room swings out into the garage, as drawn
+  doorLeaf(b, 5.035, 28.53, -90, 1.88);
+  doorLeaf(b, 8.665, 28.53, -90, 1.88);
+
+  // the inside of the overhead door: white steel sections with struts and a
+  // handle, tracks up the jambs and back under the ceiling, a torsion spring
+  const D = wallFrame('+x', 0.64);
+  D.box(b, 7.5, 25.5, 0, 0.06, 0, 8.0, 'trim');
+  for (const h of [2, 4, 6]) D.box(b, 7.5, 25.5, 0.06, 0.08, h - 0.02, h + 0.02, 'steel', { edges: false });
+  for (const h of [1.0, 3.0, 5.0, 7.0]) D.box(b, 7.8, 25.2, 0.06, 0.2, h - 0.1, h + 0.1, 'steel');
+  D.box(b, 16.2, 16.8, 0.06, 0.2, 1.55, 1.7, 'hw', { edges: false });
+  for (const [y0, y1] of [[7.25, 7.5], [25.5, 25.75]]) {
+    b.pbox([0.83, y0, 1.15, y1], 0, 8.35, 'steel');
+    b.pbox([0.83, y0, 10.2, y1], 8.2, 8.45, 'steel');
+    b.pbox([9.95, y0, 10.1, y1], 8.45, P.PLATE, 'steel', { edges: false });
+  }
+  planRod(b, [1.15, 7.3, 8.8], [1.15, 25.7, 8.8], 0.06, 'steel');
+  for (const [y0, y1] of [[14.4, 16.2], [16.8, 18.6]]) planRod(b, [1.15, y0, 8.8], [1.15, y1, 8.8], 0.13, 'castIron');
+
+  // the workbench on the front wall: a butcher-block top on steel legs, a
+  // bank of drawers, pegboard and tools, wall cabinets over a shop light
+  const W = wallFrame('+y', 4.93), w0 = 7.6, w1 = 18.8;
+  W.box(b, w0, w1, 0, 2.3, 2.85, 3.05, 'tableOak');
+  for (const s of [w0 + 0.1, 13.0, w1 - 0.35]) for (const d of [0.1, 1.95]) W.box(b, s, s + 0.25, d, d + 0.25, 0, 2.85, 'castIron');
+  W.box(b, w0 + 0.1, 15.2, 0.15, 2.2, 0.55, 0.65, 'tableOak');
+  W.box(b, 15.25, w1 - 0.35, 0.1, 2.15, 0.65, 2.85, 'garageCab');
+  for (const [h0, h1] of [[0.7, 1.4], [1.45, 2.15], [2.2, 2.8]]) {
+    face(b, W, 15.28, w1 - 0.38, h0, h1, 2.15, 'garageCab');
+    bar(b, W, (15.25 + w1 - 0.35) / 2, (h0 + h1) / 2, 2.15, 1.0, 'hw');
+  }
+  shelfStuff(b, W, w0 + 0.4, 15.0, 0.65, 2.1, 2.75, r, { cans: false });
+  W.box(b, w0 + 0.2, w1 - 0.2, 0, 0.05, 3.3, 7.2, 'pegboard');
+  for (const [h0, h1] of [[3.22, 3.3], [7.2, 7.28]]) W.box(b, w0 + 0.1, w1 - 0.1, 0, 0.08, h0, h1, 'tableOak');
+  // tools on the pegboard: hammer, wrenches, screwdrivers, a saw and a
+  // level, a tape, an extension cord, clamps
+  W.box(b, 8.4, 8.5, 0.1, 0.2, 4.3, 5.45, 'oak');
+  W.box(b, 8.15, 8.75, 0.08, 0.24, 5.45, 5.62, 'hw');
+  for (let i = 0; i < 8; i++) {
+    const s = 9.1 + i * 0.2, len = 0.45 + i * 0.09;
+    W.box(b, s - 0.03, s + 0.03, 0.08, 0.12, 6.6 - len, 6.6, 'steel', { edges: false });
+    W.box(b, s - 0.06, s + 0.06, 0.08, 0.12, 6.6 - len - 0.12, 6.6 - len, 'steel', { edges: false });
+  }
+  ['mowerPaint', 'lemon', 'navyPaint', 'mowerPaint', 'lemon', 'navyPaint'].forEach((m, i) => {
+    const L = W.at(11.0 + i * 0.22, 0.2);
+    L.cyl(b, 0, 0, 6.15, 6.6, 0.06, m, { seg: 8 });
+    L.cyl(b, 0, 0, 5.55, 6.15, 0.018, 'steel', { seg: 6 });
+  });
+  W.box(b, 12.4, 13.95, 0.07, 0.09, 5.5, 6.0, 'steel');
+  W.box(b, 13.95, 14.45, 0.06, 0.16, 5.4, 6.08, 'oak');
+  W.box(b, 12.2, 14.6, 0.06, 0.26, 4.42, 4.64, 'lemon');
+  W.box(b, 14.95, 15.35, 0.06, 0.3, 6.2, 6.6, 'lemon', { r: 0.05 });
+  W.at(16.1, 0.15).geo(b, new THREE.TorusGeometry(0.45, 0.07, 8, 24), 'pillowA', {}, new THREE.Matrix4().makeTranslation(0, 5.1, 0));
+  for (const s of [17.1, 17.5, 17.9]) {
+    W.box(b, s - 0.03, s + 0.03, 0.08, 0.2, 4.7, 6.2, 'castIron', { edges: false });
+    W.box(b, s - 0.03, s + 0.03, 0.08, 0.5, 6.1, 6.2, 'castIron', { edges: false });
+    W.box(b, s - 0.05, s + 0.05, 0.12, 0.45, 4.6, 4.95, 'mowerPaint', { edges: false });
+  }
+  // on the bench: a vise, a toolbox, a drill, a can of brushes
+  W.box(b, w0 + 0.05, w0 + 0.75, 1.6, 2.4, 3.05, 3.5, 'castIron');
+  W.box(b, 9.6, 11.4, 0.4, 1.45, 3.05, 3.8, 'mowerPaint', { r: 0.05 });
+  W.box(b, 10.2, 10.8, 0.85, 1.0, 3.8, 3.95, 'hw', { edges: false });
+  const Dr = W.at(13.0, 1.3).sub(0, 3.05, 0, 30);
+  Dr.box(b, -0.15, 0.15, 0, 0.18, -0.3, 0.2, 'castIron');
+  Dr.box(b, -0.08, 0.08, 0.18, 0.75, -0.1, 0.12, 'pantryPaint');
+  Dr.box(b, -0.11, 0.11, 0.7, 0.95, -0.15, 0.55, 'pantryPaint', { r: 0.04 });
+  W.at(14.5, 0.9).cyl(b, 0, 0, 3.05, 3.6, 0.22, 'steel', { seg: 16 });
+  for (const [x, z] of [[-0.06, 0.05], [0.07, -0.04], [0.0, 0.08]]) W.at(14.5 + x, 0.9 + z).cyl(b, 0, 0, 3.55, 4.15, 0.035, 'tableOak', { seg: 6 });
+  // wall cabinets, a shop light under them
+  W.box(b, w0, w1, 0, 1.2, 7.5, 9.8, 'garageCab');
+  for (let i = 0; i < 4; i++) {
+    const a = w0 + i * (w1 - w0) / 4;
+    face(b, W, a + 0.03, a + (w1 - w0) / 4 - 0.03, 7.55, 9.75, 1.2, 'garageCab');
+    vbar(b, W, i % 2 ? a + 0.25 : a + (w1 - w0) / 4 - 0.25, 7.95, 1.2, 0.5, 'hw');
+  }
+  W.box(b, w0 + 1.0, w1 - 1.0, 0.4, 0.9, 7.38, 7.5, 'trim');
+  W.box(b, w0 + 1.05, w1 - 1.05, 0.45, 0.85, 7.36, 7.38, 'lampShade', { edges: false });
+  // a rolling tool chest by the second window
+  W.box(b, 19.2, 21.0, 0.1, 1.7, 0.35, 3.4, 'mowerPaint', { r: 0.04 });
+  W.box(b, 19.25, 20.95, 0.15, 1.65, 3.4, 4.5, 'mowerPaint', { r: 0.04 });
+  for (const h of [0.9, 1.5, 2.1, 2.7, 3.7, 4.1]) W.box(b, 19.4, 20.8, 1.7, 1.76, h - 0.03, h + 0.03, 'steel', { edges: false });
+  for (const s of [19.5, 20.7]) W.at(s, 1.2).geo(b, new THREE.CylinderGeometry(0.15, 0.15, 0.1, 12).rotateZ(Math.PI / 2), 'tire', {}, new THREE.Matrix4().makeTranslation(0, 0.18, 0));
+
+  // the house wall: tall cabinets where the wall steps out round the
+  // pantry nook, a second fridge, a steel rack of bins, two bikes
+  const C = wallFrame('-x', 26.77);
+  C.box(b, 5.4, 11.9, 0, 1.8, 0, 0.33, 'castIron');
+  C.box(b, 5.4, 11.9, 0, 1.95, 0.33, 7.6, 'garageCab');
+  for (let i = 0; i < 3; i++) {
+    const a = 5.4 + i * 6.5 / 3, e = a + 6.5 / 3;
+    face(b, C, a + 0.03, e - 0.03, 0.38, 7.55, 1.95, 'garageCab');
+    vbar(b, C, i === 1 ? a + 0.25 : e - 0.25, 3.9, 1.95, 1.0, 'hw');
+  }
+  const H = wallFrame('-x', 27.1);
+  H.box(b, 12.5, 15.3, 0.1, 2.5, 0.05, 5.9, 'appliance', { r: 0.06 });
+  H.box(b, 12.55, 15.25, 2.5, 2.52, 4.28, 4.32, 'hw', { edges: false });
+  for (const [h0, h1] of [[2.5, 4.0], [4.55, 5.5]]) H.box(b, 12.7, 12.8, 2.52, 2.68, h0, h1, 'steel');
+  shelving(b, H, 15.8, 20.3, 1.8, [0.4, 1.9, 3.4, 4.9, 6.4], 'castIron', r);
+  hungBike(b, 27.1, 21.6, 'navyPaint');
+  hungBike(b, 27.1, 23.5, 'pantryPaint');
+
+  // the back wall: a shelf of paint cans, garden tools on a rail, a
+  // ladder on hooks above
+  const K = wallFrame('-y', 28.6);
+  K.box(b, 9.6, 22.6, 0, 1.2, 6.6, 6.7, 'tableOak');
+  for (const s of [10.2, 16.0, 22.0]) K.box(b, s - 0.05, s + 0.05, 0, 1.0, 6.0, 6.6, 'castIron', { edges: false });
+  shelfStuff(b, K, 9.8, 22.4, 6.7, 1.15, 7.45, r);
+  K.box(b, 10.0, 15.0, 0, 0.15, 5.0, 5.25, 'tableOak');
+  const tools = [[10.6, 'rake'], [11.6, 'shovel'], [12.6, 'broom'], [13.6, 'shovel'], [14.5, 'rake']];
+  for (const [s, kind] of tools) {
+    const T0 = K.at(s, 0.3);
+    T0.cyl(b, 0, 0, 0.75, 5.3, 0.06, 'oak', { seg: 8 });
+    if (kind === 'shovel') T0.box(b, -0.38, 0.38, 0.05, 0.95, -0.03, 0.03, 'steel', { r: 0.02 });
+    else if (kind === 'broom') T0.box(b, -0.65, 0.65, 0.05, 0.8, -0.15, 0.15, 'basket', { r: 0.04 });
+    else {
+      T0.box(b, -0.6, 0.6, 0.55, 0.65, -0.05, 0.05, 'hw', { edges: false });
+      for (let i = 0; i < 10; i++) T0.box(b, -0.55 + i * 0.122, -0.53 + i * 0.122, 0.3, 0.6, -0.02, 0.02, 'hw', { edges: false });
+    }
+  }
+  for (const h of [7.6, 8.75]) K.box(b, 10.5, 19.5, 0.22, 0.34, h - 0.06, h + 0.06, 'lemon');
+  for (let s = 11.0; s < 19.4; s += 1.0) K.box(b, s - 0.04, s + 0.04, 0.24, 0.32, 7.6, 8.75, 'steel', { edges: false });
+  for (const s of [11.5, 18.5]) K.box(b, s - 0.05, s + 0.05, 0, 0.42, 7.48, 7.54, 'castIron', { edges: false });
+}
+
+// ---------------------------------------------------------------- storage
+
+// Pine shelving round the three walls, full of bins and boxes, totes of
+// holiday things; the tree in its box, suitcases and a vacuum. Its doors
+// stand open in the garage (see garage).
+function storage(b) {
+  const r = rng(307);
+  shelving(b, wallFrame('-y', 34.5), 0.83, 13.4, 1.6, [0.35, 2.15, 3.95, 5.75, 7.55], 'tableOak', r);
+  shelving(b, wallFrame('+x', 0.83), 29.1, 32.9, 1.5, [0.35, 2.15, 3.95, 5.75, 7.55], 'tableOak', r);
+  // on the laundry wall: a tall box with the Christmas tree in it, a bin of
+  // ornaments on top, two suitcases; an upright vacuum by the back shelf
+  const E = wallFrame('-x', 13.4);
+  E.box(b, 29.25, 30.85, 0.1, 1.0, 0, 4.4, 'cardboard');
+  E.box(b, 29.4, 30.7, 0.15, 0.95, 4.4, 5.5, 'bin', { r: 0.04 });
+  E.box(b, 29.35, 30.75, 0.12, 0.98, 5.45, 5.6, 'mowerPaint', { r: 0.03 });
+  for (const [s, m, h] of [[31.3, 'navyPaint', 2.3], [32.15, 'castIron', 2.0]]) {
+    E.box(b, s - 0.3, s + 0.3, 0.2, 1.6, 0.1, h, m, { r: 0.12 });
+    E.box(b, s - 0.05, s + 0.05, 0.75, 1.05, h, h + 0.25, 'hw', { edges: false });
+  }
+  const V = place(3.5, 32.25, -90);
+  V.box(b, -0.55, 0.55, 0.05, 0.4, -0.4, 0.55, 'steel', { r: 0.08 });
+  V.box(b, -0.3, 0.3, 0.4, 2.6, -0.25, 0.15, 'navyPaint', { r: 0.12 });
+  V.cyl(b, 0, -0.05, 2.6, 3.9, 0.05, 'steel', { seg: 8 });
+  V.box(b, -0.25, 0.25, 3.85, 4.05, -0.12, 0.05, 'hw', { r: 0.04 });
+}
+
 // ---------------------------------------------------------------- fixtures
 
 // Hung from the ceilings, so they arrive with them: pendants, the dining
-// chandelier, ceiling fans, recessed cans, drum flush mounts, and a ring of
-// candles over the master tub.
+// chandelier, ceiling fans, recessed cans, drum flush mounts, a ring of
+// candles over the master tub, and the garage's shop lights and opener.
 export function fixtures(b) {
   // three dome pendants over the island
   for (const y of [24.6, 27.7, 30.8]) pendant(b, place(45.85, y, 0), P.PLATE, 6.2);
@@ -1541,6 +1890,28 @@ export function fixtures(b) {
   fan(b, place(83.4, 7.8, 10), P.PLATE, 8.7, 'oak');
   for (const [x, y] of [[85.9, 17.3], [85.3, 21.8], [85.9, 26.3], [81.74, 22.0], [81.74, 17.6], [81.74, 26.2], [35.74, 32.4],
     [31.2, 40.2], [33.75, 40.2], [36.3, 40.2]]) can(x, y, P.PLATE);
+  // the garage: four LED shop lights on chains, and the door opener: its
+  // motor and light, the rail to the door, the arm down to the top section
+  for (const x of [9.0, 19.5]) {
+    for (const y of [12.0, 21.6]) {
+      const S = place(x, y, 0);
+      for (const z of [-1.6, 1.6]) S.cyl(b, 0, z, 9.15, P.PLATE, 0.02, 'iron', { seg: 4 });
+      S.box(b, -0.32, 0.32, 9.0, 9.18, -2.0, 2.0, 'trim');
+      S.box(b, -0.26, 0.26, 8.98, 9.0, -1.95, 1.95, 'lampShade', { edges: false });
+    }
+  }
+  const O = place(13.2, 16.5, 0);
+  O.box(b, -0.55, 0.55, 8.6, 9.25, -0.8, 0.65, 'appliance', { r: 0.06 });
+  O.box(b, -0.45, 0.45, 8.56, 8.6, -0.7, 0.2, 'lampShade', { edges: false });
+  for (const x of [-0.5, 0.5]) O.box(b, x - 0.04, x + 0.04, 9.25, P.PLATE, -0.1, 0.0, 'castIron', { edges: false });
+  b.pbox([0.9, 16.43, 12.4, 16.57], 8.92, 9.06, 'steel');
+  b.pbox([0.83, 16.3, 1.05, 16.7], 8.5, 9.1, 'steel', { edges: false });
+  planRod(b, [0.85, 16.5, 7.55], [2.0, 16.5, 8.9], 0.05, 'steel');
+  // the storage room: a bare bulb on a porcelain holder, a pull chain
+  const Q = place(7.1, 31.8, 0);
+  Q.cyl(b, 0, 0, P.PLATE - 0.2, P.PLATE, 0.24, 'porcelain', { seg: 16, r1: 0.3 });
+  Q.geo(b, new THREE.SphereGeometry(0.18, 14, 10).scale(1, 1.3, 1), 'bulb', {}, new THREE.Matrix4().makeTranslation(0, P.PLATE - 0.42, 0));
+  Q.cyl(b, 0.12, 0, P.PLATE - 1.6, P.PLATE - 0.2, 0.008, 'brass', { seg: 4 });
 }
 
 // A thin rod between two local points.
@@ -1632,6 +2003,8 @@ export function furnish(b) {
   powder(b);
   laundry(b);
   hall(b);
+  garage(b);
+  storage(b);
 }
 
 // The fire: flames and embers, their own object so they can flicker.

@@ -568,3 +568,24 @@ export function fern(w, h) {
   t.colorSpace = THREE.SRGBColorSpace;
   return t;
 }
+
+// The garage workbench's pegboard: tempered hardboard, a warm tan with a
+// faint grain, 1/4" holes on a 1" grid. A 24" square repeats.
+export function pegboard(n, aniso) {
+  const inch = n / 24;
+  const g = fbm(n, 171, [[4, 0.4], [30, 0.3], [160, 0.3]]);
+  const h = new Float32Array(n * n);
+  const col = colourCanvas(n, (p) => {
+    const x = p % n, y = Math.floor(p / n);
+    const fx = (x % inch) / inch - 0.5, fy = (y % inch) / inch - 0.5;
+    const d = Math.hypot(fx, fy);
+    const k = (g[p] - 0.5) * 18;
+    if (d < 0.13) { h[p] = 0; return [46, 36, 26]; }
+    h[p] = d < 0.17 ? 0.6 : 1;
+    return [176 + k, 140 + k, 98 + k];
+  });
+  return {
+    map: tex(col, true, 24 * 0.0254, aniso),
+    normalMap: tex(normalFromHeight(n, h, 1.5), false, 24 * 0.0254, aniso),
+  };
+}

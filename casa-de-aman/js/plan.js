@@ -52,7 +52,7 @@ export const extWalls = [
 
 // Interior walls [x0, y0, x1, y1]. Swing: which side the door leaf opens to.
 export const intWalls = [
-  { r: [0.83, 28.6, 27.1, 29.1], open: [door(6.85, 4, { swing: '+', double: true }), door(24.9, 3, { swing: '+' })] },
+  { r: [0.83, 28.6, 27.1, 29.1], open: [door(6.85, 4, { swing: '-', double: true }), door(24.9, 3, { swing: '+' })] },
   { r: [27.1, 28.6, 37.6, 29.1], open: [door(31.5, 3, { swing: '-' })] },
   { r: [27.1, 12.13, 27.6, 28.6], open: [] },
   { r: [37.6, 12.13, 37.98, 42.34], open: [door(17.0, 3, { swing: '-' }), cased(38.4, 3)] },
@@ -162,8 +162,7 @@ export const roofs = [
 
 // Furniture and built-ins, as boxes [x0, y0, x1, y1, z0, z1] in feet.
 export const furniture = [
-  // every room on this floor but the garage and storage is fitted out in
-  // furnish.js
+  // every room on this floor is fitted out in furnish.js
 ];
 
 // Stair to the theater over the garage: up toward the master wing, a

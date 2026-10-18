@@ -25,7 +25,9 @@ const NODES = {
   M: { name: 'Mudbench', room: 'hall', at: [30.6, 35.0], look: [33.8, 42.3] },
   PW: { name: 'Powder', room: 'powder', at: [34.6, 30.6], look: [36.0, 35.7] },
   LA: { name: 'Laundry', room: 'laundry', at: [18.2, 36.8], look: [17.5, 29] },
-  G: { name: 'Garage', room: 'garage', at: [14.0, 18.0], look: [14, 5] },
+  G: { name: 'Garage', room: 'garage', at: [21.2, 16.4], look: [2, 14] },
+  G2: { name: 'Garage', room: 'garage', at: [5.4, 15.7], look: [26, 14.5] },
+  ST: { name: 'Storage', room: 'storage', at: [7.4, 30.5], look: [1.2, 33.8] },
   MB1: { name: 'Master bedroom', room: 'mbed', at: [24.2, 45.6], look: [16, 60] },
   MB2: { name: 'Master bedroom', room: 'mbed', at: [17.4, 56.4], look: [27, 50] },
   MBA: { name: 'Master bath', room: 'mbath', at: [9.6, 53.9], look: [1.5, 56.0] },
@@ -61,7 +63,12 @@ const LINKS = [
   ['M', 'N', [[31.5, 30.6], [31.5, 28.85], [31.8, 26.0]]],
   ['M', 'PW', [[32.3, 32.3], [34.6, 32.3]]],
   ['M', 'LA', [[23.6, 37.0], [22.4, 37.0]]],
-  ['M', 'G', [[24.9, 31.0], [24.9, 28.85], [22.0, 25.5]]],
+  // into the garage round the car's nose; to storage along the back wall,
+  // behind the car, and between the open doors
+  ['M', 'G', [[24.9, 31.0], [24.9, 28.85], [22.6, 26.2]]],
+  ['G', 'G2', []],
+  ['M', 'ST', [[24.9, 31.0], [24.9, 28.85], [22.6, 26.4], [8.6, 26.1], [6.85, 27.2], [6.85, 29.3]]],
+  ['G', 'ST', [[21.2, 26.2], [8.6, 26.1], [6.85, 27.2], [6.85, 29.3]]],
   ['M', 'MB1', [[28.4, 40.6], [27.8, 43.15], [27.6, 44.6]]],
   ['MB1', 'MB2', [[20.0, 47.5]]],
   ['MB1', 'MBA', [[17.0, 50.0], [15.5, 53.9], [13.6, 53.9]]],
@@ -82,12 +89,12 @@ const LINKS = [
 // Which spot a room on the plan takes you to.
 const ROOM_NODE = {
   entry: 'E', living: 'L1', kitchen: 'K1', dining: 'D1', pantry: 'N', hall: 'M', powder: 'PW',
-  laundry: 'LA', garage: 'G', mcloset: 'MC', mbath: 'MBA', mbed: 'MB1', bed2: 'B2', bed3: 'B3',
+  laundry: 'LA', garage: 'G', storage: 'ST', mcloset: 'MC', mbath: 'MBA', mbed: 'MB1', bed2: 'B2', bed3: 'B3',
   bhall: 'BH', bath2: 'BA2', frontPorch: 'FP', rearPorch: 'RP1',
 };
 // Rooms with their finishes in; the rest are still the drawing.
 const FITTED = new Set(['entry', 'living', 'kitchen', 'dining', 'pantry', 'frontPorch', 'rearPorch', 'mbed', 'mbath', 'mcloset',
-  'bed2', 'bed3', 'bhall', 'bath2', 'powder', 'laundry', 'hall']);
+  'bed2', 'bed3', 'bhall', 'bath2', 'powder', 'laundry', 'hall', 'garage', 'storage']);
 
 // ---------------------------------------------------------------- graph
 

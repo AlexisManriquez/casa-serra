@@ -2,7 +2,8 @@
 // landing, the walk in through the front door, the living room, out to the
 // rear porch, then the kitchen, the butler's pantry and the dining room.
 // From there you explore on foot; the master suite, the bedroom wing, the
-// powder room, the laundry and the mudbench hall sweep in as you walk in.
+// powder room, the laundry, the mudbench hall, the garage and the storage
+// room sweep in as you walk in.
 import * as THREE from 'three';
 import { RGBELoader } from 'three/addons/loaders/RGBELoader.js';
 import * as P from './plan.js';
@@ -117,6 +118,7 @@ function makeMaterials() {
   const stack = T.stackTile(LOW ? 512 : 1024, aniso);
   const cement = T.cementTile(LOW ? 512 : 1024, aniso);
   const paper = T.wallpaper(LOW ? 512 : 1024, aniso);
+  const peg = T.pegboard(LOW ? 512 : 1024, aniso);
   const n2 = (k) => new THREE.Vector2(k, k);
 
   const roofed = { ext: true, roofCut: wy(P.PLATE) + 0.01 };
@@ -253,6 +255,18 @@ function makeMaterials() {
     rug5Border: std({ ...rug, color: '#8c7258', roughness: 1 }, CI),
     art3: std({ map: T.hills(720, 460), roughness: 0.75 }, CI),
     art4: std({ map: T.fern(600, 450), roughness: 0.75 }, CI),
+
+    // the garage and the storage room
+    carPaint: std({ color: '#33414d', roughness: 0.24, metalness: 0.55 }, CI),
+    tire: std({ color: '#19191a', roughness: 0.88 }, CI),
+    lens: std({ color: '#e9eef0', roughness: 0.06, metalness: 0.25 }, CI),
+    tailLight: std({ color: '#7d1210', emissive: new THREE.Color('#3a0402'), roughness: 0.2 }, CI),
+    mowerPaint: std({ color: '#a3291f', roughness: 0.38 }, CI),
+    cartPlastic: std({ color: '#3d4642', roughness: 0.6 }, CI),
+    garageCab: std({ color: '#8a9196', roughness: 0.45 }, CI),
+    pegboard: std({ ...peg, roughness: 0.8 }, CI),
+    bin: std({ color: '#a7afb3', roughness: 0.4 }, CI),
+    cardboard: std({ color: '#b78f62', roughness: 0.95 }, CI),
   };
   // the ground circle has unit UVs; scale its tiling up to metres
   for (const k of ['map', 'normalMap', 'roughnessMap']) M.grass[k].repeat.set(640 / 3.2, 640 / 3.2);
@@ -585,11 +599,13 @@ const ui = {
 let explore = null;
 
 // The rooms off the scroll (the master suite, the bedroom wing, the powder
-// room, the laundry and the mudbench hall) each sweep in the first time you
-// walk into them in explore mode, from where you came in, and go back to the
-// drawing when you return to the tour. A closet comes in with its bedroom.
+// room, the laundry, the mudbench hall, the garage and the storage room)
+// each sweep in the first time you walk into them in explore mode, from
+// where you came in, and go back to the drawing when you return to the
+// tour. A closet comes in with its bedroom.
 const SUITE = {                                     // sweep radius, metres
   mbed: 9, mbath: 6, mcloset: 6, bed2: 8, bed3: 8, bath2: 7, bhall: 6, hall: 11, powder: 4, laundry: 6,
+  garage: 12, storage: 5,
 };
 const WITH = { bed2: ['closet2'], bed3: ['closet3'] };
 const suite = {};                                   // id -> { c, v }
@@ -631,6 +647,8 @@ const LAMPS = {
   hall: ['#ffd6a8', 7, 10, 30.5, 37.0, 8.4],
   powder: ['#ffd2a0', 3, 4, 35.7, 32.6, 7.0],
   laundry: ['#ffe2c0', 5, 7, 18.0, 35.0, 8.0],
+  garage: ['#fff2e0', 9, 13, 14.5, 16.5, 8.7],
+  storage: ['#ffdcb0', 3, 5, 7.1, 31.8, 8.8],
 };
 const lampAt = (id) => at(LAMPS[id][3], LAMPS[id][4], LAMPS[id][5]);
 function stepLamps(dt) {

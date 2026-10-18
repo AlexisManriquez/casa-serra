@@ -443,13 +443,14 @@ export function buildInterior(batch) {
   for (const r of P.rooms) {
     // oak through the living rooms and the master suite, carpet in the two
     // bedrooms and their closets; marble-look tile in the master bath and the
-    // powder room, a hex mosaic in bath 2, cement tile in the laundry
-    const m = { garage: 'garageFloor', mbath: 'bathTile', powder: 'bathTile', bath2: 'hexFloor', laundry: 'cementTile',
+    // powder room, a hex mosaic in bath 2, cement tile in the laundry,
+    // sealed concrete in the garage and the storage room off it
+    const m = { garage: 'garageFloor', storage: 'garageFloor', mbath: 'bathTile', powder: 'bathTile', bath2: 'hexFloor', laundry: 'cementTile',
       bed2: 'carpet', bed3: 'carpet', closet2: 'carpet', closet3: 'carpet' }[r.id] || 'oak';
     batch.pbox(r.r, -0.02, 0, m === 'oak' ? 'floor' : m, { edges: false, skip: ['ny', 'px', 'nx', 'pz', 'nz'] });
   }
   // baseboards wherever a wall meets the floor, and casings on the openings
-  for (const r of P.rooms) if (r.id !== 'garage') baseboards(batch, r.r);
+  for (const r of P.rooms) if (r.id !== 'garage' && r.id !== 'storage') baseboards(batch, r.r);
   for (const w of P.intWalls) for (const o of w.open) casing(batch, w.r, o);
 }
 
