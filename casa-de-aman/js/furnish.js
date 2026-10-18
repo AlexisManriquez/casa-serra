@@ -1,13 +1,14 @@
 // The fitted rooms: the living room, the kitchen, the butler's pantry, the
-// dining room and the rear porch (checkpoint 2), and the master suite
-// (checkpoint 4). Cabinet runs follow the codes on sheet A-2 (B27, SB36,
+// dining room and the rear porch (checkpoint 2), the master suite
+// (checkpoint 4), and bedrooms 2 and 3, bath 2, the powder room, the laundry
+// and the mudbench hall (checkpoint 5). Cabinet runs follow the codes on sheet A-2 (B27, SB36,
 // W3642 ...); the rest is sized like the real thing. All in plan feet, like
 // plan.js.
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import * as P from './plan.js';
 
-const { FT, wx, wz } = P;
+const { FT, wx, wy, wz } = P;
 const D2R = Math.PI / 180;
 const UP = new THREE.Vector3(0, 1, 0);
 
@@ -826,23 +827,33 @@ function masterBedroom(b) {
   doorLeaf(b, 28.95, 43.41, 90, 2.55);
 }
 
-// A king bed: tall upholstered headboard, a white duvet over a deep
-// mattress, shams and pillows, a throw across the foot. L stands at the
-// middle of the head wall, z toward the foot.
-function bed(b, L) {
-  const hw = 3.4, len = 7.1;
-  L.box(b, -hw - 0.15, hw + 0.15, 0, 5.4, 0.02, 0.5, 'headboard', { r: 0.14 });
-  L.box(b, -hw, hw, 0.35, 1.2, 0.5, len, 'headboard', { r: 0.08 });
-  for (const x of [-hw + 0.25, hw - 0.25]) L.box(b, x - 0.1, x + 0.1, 0, 0.35, len - 0.35, len - 0.15, 'walnut', { edges: false });
+// A bed: a tall upholstered headboard (or an oak one), a white duvet over a
+// deep mattress, shams and pillows, a throw across the foot. L stands at the
+// middle of the head wall, z toward the foot. The default is a king.
+function bed(b, L, { hw = 3.4, len = 7.1, head = 'headboard', wood = false, duvet = 'bedding', cover = 'bedThrow', lumbar = 'pillowB', shams = 3 } = {}) {
+  if (wood) {
+    // an oak panel headboard between square posts, oak side rails
+    for (const x of [-hw - 0.05, hw + 0.05]) L.box(b, x - 0.18, x + 0.18, 0, 4.6, 0.04, 0.4, head);
+    L.box(b, -hw + 0.13, hw - 0.13, 1.2, 4.2, 0.12, 0.3, head);
+    L.box(b, -hw - 0.2, hw + 0.2, 4.6, 4.75, 0.0, 0.45, head);
+    for (const x of [-hw - 0.05, hw + 0.05]) L.box(b, x - 0.12, x + 0.12, 0, 1.4, len - 0.24, len + 0.06, head);
+    L.box(b, -hw, hw, 0.6, 1.2, len - 0.18, len, head);
+    for (const x of [-hw + 0.02, hw - 0.02]) L.box(b, x - 0.08, x + 0.08, 0.6, 1.2, 0.4, len - 0.18, head);
+  } else {
+    L.box(b, -hw - 0.15, hw + 0.15, 0, 5.4, 0.02, 0.5, head, { r: 0.14 });
+    L.box(b, -hw, hw, 0.35, 1.2, 0.5, len, head, { r: 0.08 });
+    for (const x of [-hw + 0.25, hw - 0.25]) L.box(b, x - 0.1, x + 0.1, 0, 0.35, len - 0.35, len - 0.15, 'walnut', { edges: false });
+  }
   L.box(b, -hw + 0.1, hw - 0.1, 1.2, 2.0, 0.55, len - 0.08, 'bedding', { r: 0.14 });
   // the duvet falls over the sides and the foot; its top is folded back
-  L.box(b, -hw - 0.06, hw + 0.06, 1.0, 2.14, 2.2, len + 0.04, 'bedding', { r: 0.2 });
+  L.box(b, -hw - 0.06, hw + 0.06, 1.0, 2.14, 2.2, len + 0.04, duvet, { r: 0.2 });
   L.box(b, -hw - 0.02, hw + 0.02, 2.04, 2.3, 2.2, 3.1, 'bedding', { r: 0.12 });
-  L.box(b, -hw - 0.1, hw + 0.1, 1.3, 2.22, len - 2.1, len + 0.1, 'bedThrow', { r: 0.1 });
-  // three euro shams against the headboard, two pillows, a lumbar
-  for (const x of [-2.2, 0, 2.2]) L.sub(x, 2.0, 0.85, 0, -10).box(b, -1.06, 1.06, 0, 2.1, -0.24, 0.24, 'bedding', { r: 0.22 });
-  for (const x of [-1.55, 1.55]) L.sub(x, 2.0, 1.5, 0, -38).box(b, -1.45, 1.45, 0, 1.5, -0.22, 0.22, 'bedding', { r: 0.22 });
-  L.sub(0, 2.05, 2.05, 0, -22).box(b, -1.1, 1.1, 0, 0.95, -0.17, 0.17, 'pillowB', { r: 0.15 });
+  L.box(b, -hw - 0.1, hw + 0.1, 1.3, 2.22, len - 2.1, len + 0.1, cover, { r: 0.1 });
+  // euro shams against the headboard, two pillows, a lumbar
+  const sw = (2 * hw - 0.4) / shams;
+  for (let i = 0; i < shams; i++) L.sub(-hw + 0.2 + sw * (i + 0.5), 2.0, 0.85, 0, -10).box(b, -sw / 2 + 0.02, sw / 2 - 0.02, 0, 2.1, -0.24, 0.24, 'bedding', { r: 0.22 });
+  for (const x of [-hw * 0.46, hw * 0.46]) L.sub(x, 2.0, 1.5, 0, -38).box(b, -hw * 0.43, hw * 0.43, 0, 1.5, -0.22, 0.22, 'bedding', { r: 0.22 });
+  L.sub(0, 2.05, 2.05, 0, -22).box(b, -1.1, 1.1, 0, 0.95, -0.17, 0.17, lumbar, { r: 0.15 });
 }
 
 function nightstand(b, L) {
@@ -974,10 +985,11 @@ function toilet(b, L) {
 
 const GARMENTS = ['garmentA', 'garmentB', 'garmentC', 'garmentD', 'garmentE', 'garmentF'];
 
-function masterCloset(b) {
-  const r = rng(97);
+// Closet fittings on a wall frame: a rod of hanging clothes (long = dresses
+// and coats), shelves, folded stacks and baskets, side panels.
+function closetKit(b, seed) {
+  const r = rng(seed);
   const pick = () => GARMENTS[Math.floor(r() * GARMENTS.length)];
-  // a rod of hanging clothes, shelves above; long = dresses and coats
   const rod = (fr, s0, s1, h, long) => {
     fr.box(b, s0, s1, 0.97, 1.03, h - 0.03, h + 0.03, 'brass', { edges: false });
     let s = s0 + 0.15;
@@ -990,7 +1002,6 @@ function masterCloset(b) {
     }
   };
   const shelf = (fr, s0, s1, h, d = 1.7) => fr.box(b, s0, s1, 0, d, h, h + 0.08, 'cab');
-  // folded stacks and baskets along a shelf
   const stacks = (fr, s0, s1, h, d = 1.3) => {
     let s = s0 + 0.2;
     while (s < s1 - 1.1) {
@@ -1004,7 +1015,18 @@ function masterCloset(b) {
     }
   };
   const side = (fr, s, h0, h1) => fr.box(b, s, s + 0.08, 0, 1.75, h0, h1, 'cab');
+  // pairs of shoes along a shelf
+  const shoes = (fr, s0, s1, h) => {
+    for (let s = s0 + 0.15; s < s1 - 0.6; s += 0.72) {
+      const m = ['leather', 'hw', 'porcelain', 'leather'][Math.floor(r() * 4)];
+      for (const o of [0, 0.27]) fr.box(b, s + o, s + o + 0.24, 0.15, 1.0, h + 0.08, h + 0.08 + 0.28 + r() * 0.1, m, { r: 0.06 });
+    }
+  };
+  return { r, rod, shelf, stacks, side, shoes };
+}
 
+function masterCloset(b) {
+  const { rod, shelf, stacks, side, shoes } = closetKit(b, 97);
   // the outside wall: long hang, then double hang to the corner
   const W = wallFrame('+x', 0.83);
   rod(W, 34.88, 38.5, 5.9, true);
@@ -1038,10 +1060,7 @@ function masterCloset(b) {
   for (const [s0, s1] of [[2.95, 5.2], [8.5, 11.25]]) {
     for (let h = 0.4; h < 8.6; h += 1.05) {
       shelf(N, s0, s1, h, 1.2);
-      for (let s = s0 + 0.15; s < s1 - 0.6; s += 0.72) {
-        const m = ['leather', 'hw', 'porcelain', 'leather'][Math.floor(r() * 4)];
-        for (const o of [0, 0.27]) N.box(b, s + o, s + o + 0.24, 0.15, 1.0, h + 0.08, h + 0.08 + 0.28 + r() * 0.1, m, { r: 0.06 });
-      }
+      shoes(N, s0, s1, h);
     }
     side(N, s0 - 0.08, 0, 9.0);
     side(N, s1, 0, 9.0);
@@ -1071,11 +1090,420 @@ function masterCloset(b) {
   doorLeaf(b, 13.4, 34.96, 180, 2.55);
 }
 
+// ---------------------------------------------------------------- bedroom wing
+
+// A round rod between two plan points [x, y, h], in feet.
+function planRod(b, [x0, y0, h0], [x1, y1, h1], r, m) {
+  const a = new THREE.Vector3(wx(x0), wy(h0), wz(y0)), d = new THREE.Vector3(wx(x1), wy(h1), wz(y1)).sub(a);
+  const M = new THREE.Matrix4().compose(a.addScaledVector(d, 0.5), new THREE.Quaternion().setFromUnitVectors(UP, d.clone().normalize()), new THREE.Vector3(1, 1, 1));
+  const g = new THREE.CylinderGeometry(r * FT, r * FT, d.length(), 8);
+  b.geo(g, M, m);
+  g.dispose();
+}
+
+// Books standing along a shelf at height h, now and then a pot.
+function shelfBooks(b, fr, s0, s1, h, d, r) {
+  let s = s0 + 0.1 + r() * 0.3;
+  while (s < s1 - 0.5) {
+    if (r() < 0.8) {
+      const len = Math.min(s1 - 0.1 - s, 0.5 + r() * 0.8), hh = 0.7 + r() * 0.3;
+      fr.box(b, s, s + len, 0.1, d - 0.1, h, h + hh, 'books', { edges: false });
+      s += len + 0.2 + r() * 0.4;
+    } else {
+      fr.at(s + 0.25, d / 2).geo(b, new THREE.LatheGeometry([[0, 0], [0.2, 0.02], [0.25, 0.3], [0.12, 0.55], [0, 0.55]]
+        .map(([x, y]) => new THREE.Vector2(x, y)), 14), r() > 0.5 ? 'ceramic' : 'pottery', {}, new THREE.Matrix4().makeTranslation(0, h, 0));
+      s += 0.75;
+    }
+  }
+}
+
+function floorLamp(b, L) {
+  L.cyl(b, 0, 0, 0, 0.06, 0.45, 'hw', { seg: 18 });
+  L.cyl(b, 0, 0, 0.06, 4.6, 0.03, 'brass', { seg: 8 });
+  L.cyl(b, 0, 0, 4.25, 5.2, 0.6, 'lampShade', { seg: 24, r1: 0.72 });
+}
+
+// A framed print: L on the wall face, the picture centred at height h.
+function framed(b, L, w, h, ht, art, m = 'hw') {
+  L.box(b, -w / 2, w / 2, h - ht / 2, h + ht / 2, 0, 0.1, m);
+  L.geo(b, new THREE.PlaneGeometry(w - 0.3, ht - 0.3), art, { keepUV: true }, new THREE.Matrix4().makeTranslation(0, h, 0.105));
+}
+
+// The three doors on each side of the wing: from the hall, the closet and
+// bath 2. They stand open into the bedroom, hinged on the side away from
+// the bed. hy is just off the wall face, dir the way the leaves point.
+function wingDoors(b, hy, dir) {
+  doorLeaf(b, 76.25, hy, dir, 2.55);
+  doorLeaf(b, 80.76, hy, dir, 2.21);
+  doorLeaf(b, 84.55, hy, dir, 2.55);
+}
+
+// Bedroom 2, at the back: a queen bed with a slate linen headboard against
+// the end wall, a walnut dresser and a mirror on the living room wall, a
+// sage chair and a floor lamp between the windows.
+function bedroom2(b) {
+  b.pbox([79.2, 30.9, 87.6, 40.1], 0, 0.035, 'rug4Border', { edges: false });
+  b.pbox([79.6, 31.3, 87.2, 39.7], 0, 0.04, 'rug4');
+  bed(b, place(88.92, 35.45, 180), { hw: 2.65, len: 6.9, head: 'headboard2', cover: 'bedThrow2', lumbar: 'pillowA', shams: 2 });
+  for (const [y, k] of [[31.45, 0], [39.45, 1]]) {
+    const N = place(88.92, y, 180);
+    nightstand(b, N);
+    tableLamp(b, N.sub(k ? -0.35 : 0.35, 2.2, 0.7));
+    if (!k) N.sub(-0.5, 2.2, 0.85, 12).box(b, -0.33, 0.33, 0, 0.22, -0.45, 0.45, 'books', { edges: false });
+  }
+  const W = wallFrame('+x', 75.58);
+  dresser(b, W, 33.4, 39.4);
+  W.box(b, 35.2, 38.0, 0, 0.1, 3.9, 7.0, 'tableOak');
+  W.box(b, 35.4, 37.8, 0.1, 0.11, 4.1, 6.8, 'mirror', { edges: false });
+  tableLamp(b, W.at(34.2, 0.85).sub(0, 2.85, 0));
+  W.box(b, 38.0, 39.0, 0.4, 1.3, 2.85, 2.9, 'hw', { edges: false });
+  W.at(38.5, 0.85).geo(b, new THREE.LatheGeometry([[0, 0], [0.18, 0.02], [0.24, 0.35], [0.1, 0.8], [0, 0.8]].map(([x, y]) => new THREE.Vector2(x, y)), 14),
+    'ceramic', {}, new THREE.Matrix4().makeTranslation(0, 2.9, 0));
+  foliage(b, W.at(38.5, 0.85).sub(0, 3.95, 0), 7, 0.3, 211);
+  // the reading corner, and drapes at both windows
+  clubChair(b, place(81.4, 40.15, -110), 'chairSage');
+  floorLamp(b, place(83.7, 41.4, 0));
+  const R = wallFrame('-y', 42.34);
+  drapery(b, R, 75.95, 80.45, [[76.0, 77.2], [79.2, 80.4]]);
+  drapery(b, R, 84.65, 88.75, [[84.7, 85.9], [87.6, 88.7]]);
+  wingDoors(b, 28.85, 90);
+}
+
+// Bedroom 3, at the front: an oak bed under a sage quilt, a desk and shelves
+// on the porch wall, a bookcase by the windows, a chest at the foot.
+function bedroom3(b) {
+  b.pbox([79.0, 2.9, 87.4, 12.7], 0, 0.035, 'rug5Border', { edges: false });
+  b.pbox([79.4, 3.3, 87.0, 12.3], 0, 0.04, 'rug5');
+  bed(b, place(88.92, 7.8, 180), { hw: 2.65, len: 6.9, head: 'tableOak', wood: true, duvet: 'quilt', cover: 'throw', lumbar: 'pillowA', shams: 2 });
+  for (const [y, k] of [[3.75, 0], [11.85, 1]]) {
+    const N = place(88.92, y, 180);
+    nightstand(b, N);
+    tableLamp(b, N.sub(k ? -0.35 : 0.35, 2.2, 0.7));
+  }
+  framed(b, wallFrame('-x', 88.92).at(7.8, 0.02), 3.6, 6.4, 2.4, 'art3', 'tableOak');
+  // a blanket chest at the foot of the bed
+  const C = place(80.85, 7.8, 0);
+  C.box(b, -0.75, 0.75, 0.15, 1.75, -1.8, 1.8, 'walnut');
+  C.box(b, -0.8, 0.8, 1.75, 1.85, -1.85, 1.85, 'walnut');
+  for (const z of [-1.6, 1.6]) C.box(b, -0.7, 0.7, 0, 0.15, z - 0.15, z + 0.15, 'walnut', { edges: false });
+  C.box(b, -0.7, 0.4, 1.85, 2.15, -0.9, 0.9, 'throw', { r: 0.08 });
+  // the desk, a chair and two shelves of books over it
+  const W = wallFrame('+x', 76.03), r = rng(223);
+  W.box(b, 5.4, 9.6, 0, 2.0, 2.4, 2.55, 'tableOak');
+  for (const s of [5.55, 9.45]) for (const d of [0.15, 1.85]) W.box(b, s - 0.08, s + 0.08, d - 0.08, d + 0.08, 0, 2.4, 'tableOak', { edges: false });
+  W.box(b, 6.4, 8.6, 0.1, 1.9, 2.05, 2.4, 'tableOak');
+  bar(b, W, 7.5, 2.22, 1.9, 0.6, 'brass');
+  diningChair(b, place(78.75, 7.5, 180), 'chairLinen');
+  tableLamp(b, W.at(9.0, 0.6).sub(0, 2.55, 0));
+  W.box(b, 5.7, 6.6, 0.35, 1.15, 2.55, 2.85, 'books', { edges: false });
+  for (const h of [4.9, 6.3]) {
+    W.box(b, 5.6, 9.4, 0, 0.95, h, h + 0.1, 'tableOak');
+    shelfBooks(b, W, 5.6, 9.4, h + 0.1, 0.95, r);
+  }
+  // a painted bookcase in the corner by the windows
+  const F = wallFrame('+y', 0.83), [c0, c1] = [76.1, 78.3];
+  for (const s of [c0, c1 - 0.08]) F.box(b, s, s + 0.08, 0, 1.2, 0, 6.8, 'cab');
+  F.box(b, c0, c1, 0, 1.25, 6.72, 6.85, 'cab');
+  F.box(b, c0 + 0.08, c1 - 0.08, 0, 1.2, 0, 0.35, 'cab');
+  F.box(b, c0 + 0.08, c1 - 0.08, 0, 0.04, 0.35, 6.72, 'cab', { edges: false });
+  for (const h of [1.9, 3.5, 5.1]) F.box(b, c0 + 0.08, c1 - 0.08, 0, 1.15, h, h + 0.07, 'cab');
+  for (const h of [0.35, 1.97, 3.57, 5.17]) shelfBooks(b, F, c0 + 0.08, c1 - 0.08, h, 1.15, r);
+  drapery(b, F, 78.35, 86.65, [[78.4, 79.6], [85.4, 86.6]]);
+  wingDoors(b, 14.75, -90);
+}
+
+// The bedroom hall: a runner and a long print on the closet wall.
+function bedHall(b) {
+  b.pbox([76.55, 16.2, 78.25, 27.4], 0, 0.035, 'rug2Border', { edges: false });
+  b.pbox([76.7, 16.35, 78.1, 27.25], 0, 0.04, 'rug2');
+  framed(b, wallFrame('-x', 79.2).at(21.8, 0.02), 4.2, 5.6, 2.6, 'art3');
+}
+
+// The two closets between the bedrooms: double hang across the back, shelves
+// of folded things and shoes down the bath side.
+function wingClosets(b) {
+  const { rod, shelf, stacks, side, shoes } = closetKit(b, 131);
+  for (const [back, y, sideA, sideB] of [[wallFrame('-y', 20.0), 20.0, 15.25, 18.2], [wallFrame('+y', 23.98), 23.98, 25.2, 28.35]]) {
+    rod(back, 79.62, 83.86, 3.4, false);
+    rod(back, 79.62, 83.86, 7.1, false);
+    shelf(back, 79.58, 83.9, 7.4); stacks(back, 79.58, 83.9, 7.4);
+    shelf(back, 79.58, 83.9, 9.0);
+    const S = wallFrame('-x', 83.9);
+    for (const [h, k] of [[0.3, 0], [1.4, 0], [2.6, 1], [3.8, 1], [5.0, 1]]) {
+      shelf(S, sideA, sideB, h, 1.15);
+      if (k) stacks(S, sideA, sideB, h, 1.0); else shoes(S, sideA, sideB, h);
+    }
+    side(S, y > 22 ? sideA - 0.08 : sideB, 0, 6.2);
+  }
+}
+
+// ---------------------------------------------------------------- bath 2
+
+const NAVY = { paint: 'navyPaint', hw: 'brass', top: 'marbleTop' };
+
+// A vanity with a rectangular undermount basin: a stack of drawers either
+// side, a false front and two doors under the basin, a brass gooseneck.
+function vanity(b, fr, s0, s1, k) {
+  const df = DEPTH - 0.08, g = 0.012, c = (s0 + s1) / 2, a = c - 1.1, e = c + 1.1, bt = BASE_TOP - 0.6;
+  baseRun(b, fr, s0, [[a - s0, 'drawers']], k);
+  baseRun(b, fr, e, [[s1 - e, 'drawers']], k);
+  fr.box(b, a, e, 0, DEPTH - 0.33, 0, TOE, k.paint, { edges: false });
+  fr.box(b, a, e, 0, df, TOE, bt, k.paint);
+  fr.box(b, a, e, df - 0.05, df, bt, BASE_TOP, k.paint);
+  fr.box(b, a, e, 0, 0.05, bt, BASE_TOP, k.paint);
+  face(b, fr, a + g, e - g, BASE_TOP - 0.6, BASE_TOP - 0.04, df, k.paint);
+  face(b, fr, a + g, c - g, TOE + 0.04, BASE_TOP - 0.64, df, k.paint);
+  face(b, fr, c + g, e - g, TOE + 0.04, BASE_TOP - 0.64, df, k.paint);
+  for (const sx of [c - 0.12, c + 0.12]) vbar(b, fr, sx, BASE_TOP - 1.1, df, 0.5, k.hw);
+  // the basin, seen through the hole in the top
+  const [h0, h1, d0, d1] = [c - 0.85, c + 0.85, 0.45, 1.6], t = 0.05;
+  fr.box(b, h0, h1, d0, d1, bt, bt + t, 'porcelain', { edges: false });
+  fr.box(b, h0, h1, d0, d0 + t, bt, BASE_TOP, 'porcelain', { edges: false });
+  fr.box(b, h0, h1, d1 - t, d1, bt, BASE_TOP, 'porcelain', { edges: false });
+  fr.box(b, h0, h0 + t, d0, d1, bt, BASE_TOP, 'porcelain', { edges: false });
+  fr.box(b, h1 - t, h1, d0, d1, bt, BASE_TOP, 'porcelain', { edges: false });
+  fr.box(b, c - 0.08, c + 0.08, 1.0, 1.16, bt + t, bt + t + 0.005, 'steel', { edges: false });
+  counter(b, fr, s0, s1, k, { hole: [h0, h1, d0, d1] });
+  fr.box(b, s0, s1, 0, 0.05, TOP, TOP + 0.4, k.top, { edges: false });
+  faucet(b, fr.at(c, 0.25), k.hw, 0.75, TOP, 1.0);
+}
+
+function bath2(b) {
+  // a navy vanity at each end, one for each bedroom, a mirror and sconces
+  const V = wallFrame('-x', 88.92);
+  for (const [s0, s1] of [[15.2, 19.3], [24.35, 28.4]]) {
+    const c = (s0 + s1) / 2;
+    vanity(b, V, s0, s1, NAVY);
+    V.box(b, c - 1.1, c + 1.1, 0, 0.08, 4.1, 7.1, 'brass');
+    V.box(b, c - 1.0, c + 1.0, 0.08, 0.09, 4.2, 7.0, 'mirror', { edges: false });
+    for (const s of [c - 1.55, c + 1.55]) sconce(b, V.at(s, 0), 6.1);
+  }
+  for (const [y0, y1] of [[16.0, 18.5], [25.15, 27.6]]) b.pbox([84.7, y0, 86.6, y1], 0, 0.04, 'bathMat', { edges: false });
+
+  // the tub in its alcove under the high window, subway tile round it to
+  // 6'-6", a shower head and a curtain drawn back
+  const [x0, y0, x1, y1] = [86.45, 19.65, 88.92, 24.0], top = 1.6, t = 0.22;
+  b.pbox([x0, y0, x1, y1], 0, 0.45, 'porcelain', { edges: false });
+  b.pbox([x0, y0, x0 + t, y1], 0, top, 'porcelain');
+  b.pbox([x1 - 0.15, y0, x1, y1], 0.45, top, 'porcelain', { edges: false });
+  b.pbox([x0 + t, y0, x1 - 0.15, y0 + 0.15], 0.45, top, 'porcelain', { edges: false });
+  b.pbox([x0 + t, y1 - 0.15, x1 - 0.15, y1], 0.45, top, 'porcelain', { edges: false });
+  const tile = 6.5, k = 0.03;
+  b.pbox([x1 - k, y0, x1, y1], top, tile, 'subway', { edges: false });
+  b.pbox([86.4, y0, x1 - k, y0 + k], top, tile, 'subway', { edges: false });
+  b.pbox([86.4, y1 - k, x1 - k, y1], top, tile, 'subway', { edges: false });
+  const S = wallFrame('-y', y1 - k);
+  S.box(b, 87.65, 87.75, 0, 1.0, 6.55, 6.65, 'brass', { edges: false });
+  S.at(87.7, 1.0).cyl(b, 0, 0, 6.3, 6.6, 0.12, 'brass', { seg: 12, r1: 0.3 });
+  S.at(87.7, 0).geo(b, new THREE.CylinderGeometry(0.26, 0.26, 0.05, 20).rotateX(Math.PI / 2), 'brass', {}, new THREE.Matrix4().makeTranslation(0, 3.7, 0.03));
+  S.box(b, 87.67, 87.73, 0.04, 0.4, 3.67, 3.73, 'brass', { edges: false });
+  S.box(b, 87.62, 87.78, 0, 0.55, 2.0, 2.1, 'brass', { edges: false });
+  drapery(b, wallFrame('+x', 86.35), y0, y1, [[22.55, 23.95]], 6.9);
+  // towels on hooks by the toilet room door
+  const H = wallFrame('+x', 84.28);
+  for (const s of [19.6, 24.0]) {
+    H.box(b, s - 0.05, s + 0.05, 0, 0.25, 5.5, 5.6, 'brass', { edges: false });
+    H.box(b, s - 0.65, s + 0.65, 0.05, 0.2, 2.9, 5.55, 'towel', { r: 0.05 });
+  }
+  // the toilet room, its door half open
+  toilet(b, place(79.58, 21.99, 0));
+  const Tp = wallFrame('+y', 20.38);
+  Tp.box(b, 81.35, 81.45, 0, 0.35, 2.25, 2.33, 'brass', { edges: false });
+  Tp.at(81.1, 0.3).geo(b, new THREE.CylinderGeometry(0.2, 0.2, 0.4, 16).rotateZ(Math.PI / 2), 'porcelain', {},
+    new THREE.Matrix4().makeTranslation(0, 2.05, 0));
+  framed(b, wallFrame('+x', 79.58).at(21.99, 0.02), 1.9, 5.4, 1.5, 'art4', 'tableOak');
+  doorLeaf(b, 83.83, 22.78, -135, 2.21);
+}
+
+// ---------------------------------------------------------------- powder
+
+// Green botanical wallpaper above the baseboard, a walnut washstand with a
+// white vessel and a round brass mirror, the toilet on the front wall.
+function powder(b) {
+  const [x0, y0, x1, y1] = [33.88, 29.1, 37.6, 35.72], t = 0.02, h0 = 0.4, h1 = P.PLATE - 0.01;
+  const wp = (r, a = h0) => b.pbox(r, a, h1, 'wallpaper', { edges: false });
+  wp([x0, y0, x1, y0 + t]);
+  wp([x0, y1 - t, x1, y1]);
+  wp([x1 - t, y0 + t, x1, y1 - t]);
+  wp([x0, y0 + t, x0 + t, 30.97]);
+  wp([x0, 33.63, x0 + t, y1 - t]);
+  wp([x0, 30.97, x0 + t, 33.63], 6.67);
+
+  toilet(b, place(35.74, 29.1, 90));
+  const Sh = wallFrame('+y', 29.1 + t);
+  Sh.box(b, 34.9, 36.6, 0, 0.7, 5.0, 5.1, 'walnut');
+  foliage(b, Sh.at(35.3, 0.35).sub(0, 5.45, 0), 5, 0.22, 233);
+  Sh.at(35.3, 0.35).cyl(b, 0, 0, 5.1, 5.45, 0.18, 'pottery', { seg: 12 });
+  Sh.at(36.2, 0.35).cyl(b, 0, 0, 5.1, 5.5, 0.11, 'candle', { seg: 12 });
+  const E = wallFrame('-x', x1 - t);
+  E.box(b, 30.85, 30.95, 0, 0.35, 2.25, 2.33, 'brass', { edges: false });
+  E.at(30.6, 0.3).geo(b, new THREE.CylinderGeometry(0.2, 0.2, 0.4, 16).rotateZ(Math.PI / 2), 'porcelain', {},
+    new THREE.Matrix4().makeTranslation(0, 2.05, 0));
+  E.at(33.6, 0.02).geo(b, new THREE.TorusGeometry(0.32, 0.025, 8, 28), 'brass', {}, new THREE.Matrix4().makeTranslation(0, 4.2, 0.12));
+  E.box(b, 33.35, 33.85, 0.06, 0.18, 3.0, 3.95, 'towel', { r: 0.04 });
+
+  const V = wallFrame('-y', y1 - t), c = 35.74;
+  for (const s of [c - 1.35, c + 1.35]) for (const d of [0.12, 1.5]) V.box(b, s - 0.07, s + 0.07, d - 0.07, d + 0.07, 0, 2.7, 'walnut', { edges: false });
+  V.box(b, c - 1.42, c + 1.42, 0, 1.6, 2.1, 2.72, 'walnut');
+  V.box(b, c - 1.3, c + 1.3, 1.6, 1.64, 2.18, 2.64, 'walnut', { edges: false });
+  bar(b, V, c, 2.41, 1.6, 0.7, 'brass');
+  V.box(b, c - 1.32, c + 1.32, 0.1, 1.5, 0.5, 0.58, 'walnut');
+  V.box(b, c - 1.1, c - 0.15, 0.3, 1.3, 0.58, 1.15, 'basket', { r: 0.05 });
+  for (let i = 0; i < 3; i++) V.box(b, c + 0.15, c + 1.1, 0.3, 1.3, 0.58 + i * 0.17, 0.74 + i * 0.17, 'towel', { r: 0.05 });
+  V.box(b, c - 1.5, c + 1.5, 0, 1.72, 2.72, 2.82, 'marbleTop');
+  V.at(c, 0.95).geo(b, new THREE.LatheGeometry([[0, 0], [0.32, 0], [0.5, 0.14], [0.58, 0.38], [0.6, 0.46], [0.55, 0.46], [0.52, 0.38],
+    [0.44, 0.18], [0.3, 0.07], [0, 0.07]].map(([x, y]) => new THREE.Vector2(x, y)), 32), 'porcelain', {}, new THREE.Matrix4().makeTranslation(0, 2.82, 0));
+  faucet(b, V.at(c, 0.22), 'brass', 0.72, 2.82, 1.05);
+  const Mr = V.at(c, 0.02);
+  Mr.geo(b, new THREE.TorusGeometry(1.0, 0.06, 10, 48), 'brass', {}, new THREE.Matrix4().makeTranslation(0, 5.55, 0.06));
+  Mr.geo(b, new THREE.CircleGeometry(0.98, 48), 'mirror', {}, new THREE.Matrix4().makeTranslation(0, 5.55, 0.04));
+  for (const s of [c - 1.45, c + 1.45]) sconce(b, V.at(s, 0), 6.0);
+  // the 2668 is a pocket door, slid away into the wall
+}
+
+// ---------------------------------------------------------------- laundry
+
+const LAU = { paint: 'laundryPaint', hw: 'brass', top: 'oak', tap: 'brass' };
+
+// A front-loading washer or dryer, 24" wide, under the counter.
+function washer(b, fr, s0, s1, dryer) {
+  const c = (s0 + s1) / 2, d = DEPTH - 0.1;
+  fr.box(b, s0, s1, 0.1, d, 0.02, 2.82, 'appliance', { r: 0.03 });
+  fr.box(b, s0 + 0.05, s1 - 0.05, d, d + 0.02, 2.35, 2.75, 'steel', { edges: false });
+  const L = fr.at(c, d);
+  L.geo(b, new THREE.TorusGeometry(0.62, 0.07, 10, 36), 'steel', {}, new THREE.Matrix4().makeTranslation(0, 1.25, 0.05));
+  L.geo(b, new THREE.CircleGeometry(0.58, 36), dryer ? 'appliance' : 'darkGlass', {}, new THREE.Matrix4().makeTranslation(0, 1.25, 0.03));
+  L.geo(b, new THREE.CylinderGeometry(0.09, 0.09, 0.06, 16).rotateX(Math.PI / 2), 'steel', {}, new THREE.Matrix4().makeTranslation(0.55, 2.55, 0.04));
+  L.box(b, -0.7, -0.1, 2.48, 2.62, 0.02, 0.03, 'darkGlass', { edges: false });
+}
+
+function laundry(b) {
+  // the washer and dryer under an oak counter, a fireclay utility sink,
+  // cabinets either end, open shelf and a drying rod over the machines
+  const S = wallFrame('+y', 29.1);
+  baseRun(b, S, 13.78, [[2.5, 'sink']], LAU);
+  washer(b, S, 16.33, 18.33, false);
+  washer(b, S, 18.38, 20.38, true);
+  baseRun(b, S, 20.43, [[1.77, 'drawers']], LAU);
+  counter(b, S, 13.78, 22.2, LAU, { hole: [13.9, 16.16, 0.28, DEPTH + 0.1] });
+  splash(b, S, 13.78, 22.2, UP0 - 0.08);
+  upperRun(b, S, 13.78, [[2.5, 'door']], LAU, { stack: false });
+  upperRun(b, S, 20.43, [[1.77, 'door']], LAU, { stack: false });
+  S.box(b, 16.28, 20.43, 0, 1.15, 7.3, 7.42, 'oak');
+  for (const s of [16.6, 17.85, 19.1]) S.box(b, s, s + 1.0, 0.15, 1.0, 7.42, 8.0, 'basket', { r: 0.05 });
+  // a rod under it, three shirts drying on hangers
+  S.box(b, 16.28, 20.43, 0.77, 0.83, 6.85, 6.91, 'brass', { edges: false });
+  for (const [s, m] of [[16.95, 'garmentA'], [18.35, 'garmentB'], [19.75, 'garmentA']]) {
+    const L = S.at(s, 0.8);
+    L.box(b, -0.08, 0.08, 6.68, 6.95, -0.02, 0.02, 'hw', { edges: false });
+    L.sub(0, 6.68, 0, 0, 0).box(b, -0.62, 0.62, -0.18, 0, -0.04, 0.04, 'oak', { edges: false });
+    L.box(b, -0.6, 0.6, 4.35, 6.62, -0.05, 0.05, m, { r: 0.04 });
+    for (const x of [-0.6, 0.6]) L.sub(x, 6.45, 0, 0, 0).box(b, -0.12, 0.12, -1.2, 0, -0.04, 0.04, m, { r: 0.04, rot: [0, 0, x < 0 ? -18 : 18] });
+  }
+  // a tall cabinet for the brooms and the iron
+  const K = wallFrame('+x', 13.78);
+  K.box(b, 31.2, 33.4, 0, DEPTH - 0.08, 0, UP1, LAU.paint);
+  for (const [h0, h1] of [[0.05, 4.6], [4.64, UP1 - 0.02]]) {
+    face(b, K, 31.212, 32.288, h0, h1, DEPTH - 0.08, LAU.paint);
+    face(b, K, 32.312, 33.388, h0, h1, DEPTH - 0.08, LAU.paint);
+  }
+  for (const s of [32.15, 32.45]) vbar(b, K, s, 4.0, DEPTH - 0.08, 1.0, 'brass');
+  K.box(b, 31.2, 33.4, 0, DEPTH + 0.1, UP1, UP1 + 0.42, LAU.paint);
+  // hampers under a peg rail, an apron and a tote on the pegs
+  const E = wallFrame('-x', 22.2);
+  for (const y of [32.3, 34.0]) {
+    const Hm = place(21.35, y, 180);
+    Hm.cyl(b, 0, 0, 0, 2.0, 0.66, 'basket', { seg: 20, r1: 0.58, edges: true });
+    Hm.cyl(b, 0, 0, 2.0, 2.08, 0.7, 'basket', { seg: 20 });
+  }
+  E.box(b, 31.4, 35.2, 0, 0.08, 5.45, 5.8, LAU.paint);
+  for (const s of [31.9, 32.85, 33.8, 34.75]) E.at(s, 0.08).geo(b, new THREE.CylinderGeometry(0.05, 0.05, 0.35, 10).rotateX(Math.PI / 2), 'oak', {},
+    new THREE.Matrix4().makeTranslation(0, 5.62, 0.17));
+  E.at(32.85, 0.1).box(b, -0.55, 0.55, 3.2, 5.6, 0, 0.06, 'garmentD', { r: 0.03 });
+  E.at(34.75, 0.12).box(b, -0.5, 0.5, 3.9, 5.1, 0, 0.3, 'basket', { r: 0.06 });
+  doorLeaf(b, 22.65, 38.315, 0, 2.88);
+}
+
+// ---------------------------------------------------------------- mudbench and hall
+
+// Three lockers on the back wall: a bench with shoes and baskets under it,
+// battened backs with hooks and coats, cubbies with baskets over, crown.
+// Painted the pantry's sage, with brass, since the two rooms meet.
+function mudbench(b) {
+  const M = wallFrame('-y', 42.34), m = 'pantryPaint';
+  const s0 = 29.95, s1 = 37.55, n = 3, bw = (s1 - s0) / n, seat = 1.55, hook = 5.3, top = 8.15;
+  const { shoes, r } = closetKit(b, 251);
+  M.box(b, s0, s1, 0, 0.05, seat, 6.35, m, { edges: false });
+  for (let s = s0 + 0.25; s < s1 - 0.1; s += 0.5) M.box(b, s - 0.03, s + 0.03, 0.05, 0.08, seat, 6.35, m, { edges: false });
+  for (let i = 0; i <= n; i++) M.box(b, s0 + i * bw - 0.04, s0 + i * bw + 0.04, 0, 1.7, 0, top, m);
+  M.box(b, s0, s1, 0, 1.5, 0, TOE, m, { edges: false });
+  M.box(b, s0, s1, 0, 1.65, TOE, TOE + 0.06, m);
+  M.box(b, s0, s1, 0, 1.75, seat - 0.12, seat, 'oak');
+  M.box(b, s0, s1, 0, 1.4, 6.35, 6.45, m);
+  M.box(b, s0, s1, 0, 0.05, 6.45, top, m, { edges: false });
+  M.box(b, s0 - 0.05, s1 + 0.05, 0, 1.55, top, top + 0.12, m);
+  M.box(b, s0 - 0.1, s1 + 0.1, 0, 1.75, top + 0.12, top + 0.45, m);
+  const coats = ['garmentC', 'garmentD', 'garmentE'];
+  for (let i = 0; i < n; i++) {
+    const a = s0 + i * bw + 0.04, e = a + bw - 0.08;
+    shoes(M, a, a + 1.35, TOE - 0.02);
+    M.box(b, a + 1.4, e - 0.05, 0.15, 1.35, TOE + 0.06, TOE + 0.85, 'basket', { r: 0.05 });
+    M.box(b, a + 0.03, e - 0.03, 0.1, 1.7, seat, seat + 0.2, 'chairLinen', { r: 0.08 });
+    M.box(b, a + 0.25, e - 0.25, 0.15, 1.2, 6.45, 7.4, 'basket', { r: 0.06 });
+    for (const [j, s] of [[0, a + bw * 0.28], [1, e - bw * 0.28]]) {
+      M.box(b, s - 0.03, s + 0.03, 0.08, 0.3, hook - 0.03, hook + 0.03, 'brass', { edges: false });
+      M.box(b, s - 0.03, s + 0.03, 0.26, 0.32, hook, hook + 0.14, 'brass', { edges: false });
+      if (j === 0) M.at(s, 0.33).box(b, -0.55, 0.55, hook - 2.6 - r() * 0.4, hook + 0.05, -0.22, 0.14, coats[i], { r: 0.12 });
+      else if (i !== 1) M.at(s, 0.3).box(b, -0.42, 0.42, hook - 1.7, hook - 0.15, -0.12, 0.12, i ? 'basket' : 'leather', { r: 0.06 });
+    }
+  }
+}
+
+function hall(b) {
+  mudbench(b);
+  // a runner from the kitchen door to the stair
+  b.pbox([26.8, 37.3, 37.4, 39.5], 0, 0.035, 'rug2Border', { edges: false });
+  b.pbox([27.0, 37.5, 37.2, 39.3], 0, 0.04, 'rug2');
+  // a walnut console on the powder room wall, a lamp, a painting over it
+  const C = wallFrame('+y', 36.1), c = 35.55;
+  C.box(b, c - 1.55, c + 1.55, 0, 1.2, 2.55, 2.7, 'walnut');
+  for (const s of [c - 1.4, c + 1.4]) C.box(b, s - 0.1, s + 0.1, 0.1, 1.1, 0, 2.55, 'walnut');
+  C.box(b, c - 1.3, c + 1.3, 0.15, 1.05, 0.5, 0.6, 'walnut');
+  C.box(b, c - 1.1, c - 0.1, 0.25, 1.0, 0.6, 1.25, 'basket', { r: 0.05 });
+  tableLamp(b, C.at(c + 0.9, 0.6).sub(0, 2.7, 0));
+  C.box(b, c - 1.1, c - 0.3, 0.3, 0.9, 2.7, 2.9, 'books', { edges: false });
+  framed(b, C.at(c - 0.35, 0.02), 2.6, 5.3, 2.0, 'art4');
+  // the doors to the garage and the pantry, standing open
+  doorLeaf(b, 23.585, 29.17, 90, 2.88);
+  doorLeaf(b, 30.185, 28.53, -90, 2.88);
+  // the stair: white risers, a newel, balusters and a walnut rail on the
+  // open side, a wall rail on the other
+  const st = P.stair, n1 = 11, run = (st.x1 - st.x0) / n1;
+  for (let i = 0; i < n1; i++) {
+    const xb = st.x1 - i * run;
+    b.pbox([xb, st.y0, xb + 0.03, st.y1], i * st.rise, (i + 1) * st.rise, 'trim', { edges: false });
+  }
+  const rail = (x) => 3.0 + (st.x1 - x) * (st.rise / run);
+  const y = st.y0 + 0.12;
+  b.pbox([25.7, y - 0.15, 26.0, y + 0.15], 0, 3.5, 'trim');
+  b.pbox([25.65, y - 0.2, 26.05, y + 0.2], 3.5, 3.62, 'walnut');
+  planRod(b, [25.85, y, rail(25.85)], [22.58, y, rail(22.58)], 0.09, 'walnut');
+  for (let i = 0; i < n1; i++) {
+    for (const k of [0.25, 0.65]) {
+      const x = st.x1 - i * run - k;
+      if (x < 22.7 || x > 25.6) continue;
+      planRod(b, [x, y, (i + 1) * st.rise], [x, y, rail(x)], 0.05, 'trim');
+    }
+  }
+  planRod(b, [25.9, st.y1 - 0.18, rail(25.9)], [18.6, st.y1 - 0.18, rail(18.6)], 0.07, 'walnut');
+  for (const x of [25.2, 22.4, 19.6]) b.pbox([x - 0.04, st.y1 - 0.2, x + 0.04, st.y1], rail(x) - 0.14, rail(x) - 0.06, 'hw', { edges: false });
+}
+
 // ---------------------------------------------------------------- fixtures
 
 // Hung from the ceilings, so they arrive with them: pendants, the dining
-// chandelier, ceiling fans, recessed cans, flush mounts in the pantry and
-// the master closet, and a ring of candles over the master tub.
+// chandelier, ceiling fans, recessed cans, drum flush mounts, and a ring of
+// candles over the master tub.
 export function fixtures(b) {
   // three dome pendants over the island
   for (const y of [24.6, 27.7, 30.8]) pendant(b, place(45.85, y, 0), P.PLATE, 6.2);
@@ -1093,18 +1521,26 @@ export function fixtures(b) {
   for (const x of [56.0, 63.7, 71.4]) for (const y of [22.4, 40.7]) can(x, y, 11);
   for (const [x, y] of [[41.6, 22.0], [41.6, 29.5], [41.6, 37.5], [45.0, 37.8], [49.8, 21.0], [49.8, 37.0], [45.0, 17.6]]) can(x, y, P.PLATE);
   for (const [x, y] of [[32.6, 16.0], [32.6, 24.0]]) can(x, y, P.PLATE);
-  // pantry: a drum flush mount
-  // pantry and master closet: a drum flush mount
-  for (const [x, y] of [[32.6, 20.0], [7.1, 40.5]]) {
+  // drum flush mounts: the pantry, the master closet, the laundry, the
+  // mudbench hall; smaller ones down the bedroom hall
+  const drum = (x, y, r = 0.85) => {
     const D = place(x, y, 0);
-    D.cyl(b, 0, 0, P.PLATE - 0.75, P.PLATE - 0.05, 0.85, 'lampShade', { seg: 24 });
+    D.cyl(b, 0, 0, P.PLATE - 0.75, P.PLATE - 0.05, r, 'lampShade', { seg: 24 });
     D.cyl(b, 0, 0, P.PLATE - 0.05, P.PLATE, 0.3, 'hw', { seg: 12 });
-  }
+  };
+  for (const [x, y] of [[32.6, 20.0], [7.1, 40.5], [18.0, 33.4], [28.0, 33.6], [31.0, 38.4]]) drum(x, y);
+  for (const y of [18.4, 25.2]) drum(77.4, y, 0.6);
   // the master suite: a fan over the foot of the bed, the ring over the tub
   fan(b, place(21.4, 52.7, 10), P.PLATE, 8.7, 'oak');
   ringChandelier(b, place(2.4, 54.04, 0), P.PLATE, 6.9);
   for (const [x, y] of [[17.2, 46.6], [25.6, 46.6], [17.2, 59.4], [25.6, 59.4], [8.2, 48.2], [8.2, 59.8], [2.5, 59.8], [2.5, 48.4],
     [4.0, 37.2], [4.0, 42.9], [10.3, 37.2], [10.3, 42.9]]) can(x, y, P.PLATE);
+  // the bedrooms: a fan over each bed's foot; cans in bath 2, the toilet
+  // room, the closets, the powder room and over the mudbench
+  fan(b, place(83.4, 35.45, 10), P.PLATE, 8.7, 'oak');
+  fan(b, place(83.4, 7.8, 10), P.PLATE, 8.7, 'oak');
+  for (const [x, y] of [[85.9, 17.3], [85.3, 21.8], [85.9, 26.3], [81.74, 22.0], [81.74, 17.6], [81.74, 26.2], [35.74, 32.4],
+    [31.2, 40.2], [33.75, 40.2], [36.3, 40.2]]) can(x, y, P.PLATE);
 }
 
 // A thin rod between two local points.
@@ -1188,6 +1624,14 @@ export function furnish(b) {
   masterBedroom(b);
   masterBath(b);
   masterCloset(b);
+  bedroom2(b);
+  bedroom3(b);
+  bedHall(b);
+  wingClosets(b);
+  bath2(b);
+  powder(b);
+  laundry(b);
+  hall(b);
 }
 
 // The fire: flames and embers, their own object so they can flicker.

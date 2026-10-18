@@ -79,6 +79,7 @@ export const intWalls = [
   { r: [4.2, 45.68, 4.58, 50.8], open: [door(48.6, 2.33, { swing: '+' })] },
   // laundry, stair, powder
   { r: [13.78, 37.6, 17.2, 37.98], open: [] },
+  { r: [17.2, 37.6, 17.58, 39.0], open: [] },
   { r: [17.2, 39.0, 22.58, 39.38], open: [] },
   { r: [22.2, 29.1, 22.58, 39.0], open: [door(37.0, 3, { swing: '+' })] },
   { r: [33.5, 29.1, 33.88, 36.1], open: [door(32.3, 2.67, { swing: '+' })] },
@@ -93,10 +94,14 @@ export const rooms = [
   { id: 'kitchen', name: 'Kitchen', sf: 393, r: [37.98, 14.2, 51.8, 42.34], label: [49.6, 19] },
   { id: 'dining', name: 'Dining', sf: 197, r: [38.43, 0.83, 51.37, 14.2], label: [41.5, 2.6] },
   { id: 'pantry', name: "Butler's pantry", sf: 165, r: [27.6, 12.13, 37.6, 28.6], label: [32.6, 20] },
-  { id: 'hall', name: 'Mudbench', sf: 0, r: [22.58, 29.1, 37.6, 42.34], label: [31.2, 39] },
-  { id: 'hall', name: '', r: [13.78, 37.98, 29.07, 42.96] },
+  // the mudbench hall wraps round the powder room and takes in the stair
+  { id: 'hall', name: 'Mudbench', sf: 0, r: [22.58, 29.1, 33.5, 42.34], label: [31.2, 39] },
+  { id: 'hall', name: '', r: [33.5, 36.1, 37.6, 42.34] },
+  { id: 'hall', name: '', r: [13.78, 37.98, 17.2, 42.96] },
+  { id: 'hall', name: '', r: [17.2, 39.0, 29.07, 42.96] },
   { id: 'powder', name: 'Powder', sf: 25, r: [33.88, 29.1, 37.6, 35.72], label: [35.7, 31.4], small: true },
   { id: 'laundry', name: 'Laundry', sf: 0, r: [13.78, 29.1, 22.2, 37.6], label: [18, 34.6] },
+  { id: 'laundry', name: '', r: [17.58, 37.6, 22.2, 39.0] },
   { id: 'garage', name: 'Garage', sf: 644, r: [0.83, 4.93, 27.1, 28.6], label: [13.8, 16.6] },
   { id: 'storage', name: 'Storage', sf: 71, r: [0.83, 29.1, 13.4, 34.5], label: [7.1, 31.8] },
   { id: 'mcloset', name: 'Mstr closet', sf: 132, r: [0.83, 34.88, 13.4, 45.3], label: [7.1, 40.1] },
@@ -105,8 +110,11 @@ export const rooms = [
   { id: 'bed2', name: 'Bedroom 2', sf: 194, r: [75.58, 28.78, 88.92, 42.34], label: [80.5, 38.6] },
   { id: 'bed3', name: 'Bedroom 3', sf: 194, r: [76.03, 0.83, 88.92, 14.82], label: [80.5, 11.6] },
   { id: 'bhall', name: '', r: [75.58, 15.2, 79.2, 28.4] },
-  { id: 'closets', name: '', r: [79.58, 15.2, 83.9, 28.4] },
+  // between the bedrooms: a closet for each, and the toilet room off bath 2
+  { id: 'closet3', name: '', r: [79.58, 15.2, 83.9, 20.0] },
+  { id: 'closet2', name: '', r: [79.58, 23.98, 83.9, 28.4] },
   { id: 'bath2', name: 'Bath 2', sf: 72, r: [84.28, 15.2, 88.92, 28.4], label: [86.2, 21.8], small: true, vertical: true },
+  { id: 'bath2', name: '', r: [79.58, 20.38, 83.9, 23.6] },
 ];
 
 // Extra labels for spaces that are not revealed rooms.
@@ -154,23 +162,8 @@ export const roofs = [
 
 // Furniture and built-ins, as boxes [x0, y0, x1, y1, z0, z1] in feet.
 export const furniture = [
-  // the kitchen, living, dining room, butler's pantry and the master suite
-  // are fitted out in furnish.js
-  // bedrooms
-  { m: 'linen', b: [82.4, 32.8, 88.92, 38.0, 0, 2.1] },
-  { m: 'linen', b: [82.4, 4.6, 88.92, 9.8, 0, 2.1] },
-  // baths, powder, laundry
-  { m: 'porcelain', b: [86.5, 19.65, 88.92, 24.0, 0, 1.8] },
-  { m: 'cab', b: [87.4, 15.2, 88.92, 19.3, 0, 2.95] },
-  { m: 'cab', b: [87.4, 24.35, 88.92, 28.4, 0, 2.95] },
-  { m: 'porcelain', b: [80.7, 21.4, 82.1, 22.9, 0, 1.4] },
-  { m: 'porcelain', b: [35.0, 29.3, 36.4, 30.8, 0, 1.4] },
-  { m: 'cab', b: [33.88, 34.0, 37.6, 35.72, 0, 2.8] },
-  { m: 'steel', b: [15.3, 29.1, 17.5, 31.6, 0, 3.2] },
-  { m: 'steel', b: [17.6, 29.1, 19.8, 31.6, 0, 3.2] },
-  // mudbench
-  { m: 'cab', b: [29.9, 41.0, 37.6, 42.34, 0, 1.6] },
-  { m: 'cab', b: [29.9, 42.0, 37.6, 42.34, 1.6, 6.5] },
+  // every room on this floor but the garage and storage is fitted out in
+  // furnish.js
 ];
 
 // Stair to the theater over the garage: up toward the master wing, a

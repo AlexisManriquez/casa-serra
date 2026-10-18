@@ -435,3 +435,136 @@ export function marsh(w, h) {
   t.colorSpace = THREE.SRGBColorSpace;
   return t;
 }
+
+// The laundry floor: 8" cement tiles, cream with a charcoal pattern. Quarter
+// circles in the corners make a circle where four tiles meet; each tile has
+// a thin ring and a small diamond at its middle. Mottled like the real thing.
+export function cementTile(n, aniso) {
+  const inch = n / 16;            // a 2 x 2 block of tiles
+  const mott = fbm(n, 151, [[6, 0.5], [24, 0.3], [90, 0.2]]);
+  const h = new Float32Array(n * n);
+  const col = colourCanvas(n, (p) => {
+    const x = p % n, y = Math.floor(p / n);
+    const fx = x % (8 * inch), fy = y % (8 * inch);
+    const e = Math.min(fx, 8 * inch - fx, fy, 8 * inch - fy);
+    if (e < 0.06 * inch) { h[p] = 0; return [150, 146, 138]; }
+    h[p] = 0.8 + mott[p] * 0.05;
+    const u = Math.abs(fx / (4 * inch) - 1), v = Math.abs(fy / (4 * inch) - 1);
+    const corner = Math.hypot(1 - u, 1 - v), mid = Math.hypot(u, v);
+    const dark = corner < 0.5 || (corner > 0.58 && corner < 0.64) || Math.abs(mid - 0.62) < 0.045 || u + v < 0.22;
+    const k = (mott[p] - 0.5) * 16;
+    return dark ? [60 + k, 62 + k, 63 + k] : [233 + k, 227 + k, 213 + k];
+  });
+  return {
+    map: tex(col, true, 16 * 0.0254, aniso),
+    normalMap: tex(normalFromHeight(n, h, 1.2), false, 16 * 0.0254, aniso),
+  };
+}
+
+// The powder room's wallpaper: sprigs of leaves in sage and old gold on a
+// deep green ground, in a half-drop repeat of 24".
+export function wallpaper(n, aniso) {
+  const c = canvas(n);
+  const ctx = c.getContext('2d');
+  ctx.fillStyle = '#2e3b33';
+  ctx.fillRect(0, 0, n, n);
+  const r = rng(161);
+  // a faint linen weave under the print
+  for (let i = 0; i < n; i += 2) {
+    ctx.fillStyle = `rgba(255,255,255,${0.012 + r() * 0.02})`;
+    ctx.fillRect(0, i, n, 1);
+    ctx.fillRect(i, 0, 1, n);
+  }
+  const sprig = (cx, cy, scale, turn) => {
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(turn);
+    ctx.strokeStyle = '#a8955f';
+    ctx.lineWidth = n * 0.004 * scale;
+    ctx.beginPath(); ctx.moveTo(0, n * 0.09 * scale); ctx.quadraticCurveTo(n * 0.02 * scale, 0, 0, -n * 0.09 * scale); ctx.stroke();
+    for (let k = 0; k < 7; k++) {
+      const t = -0.08 + k * 0.026, side = k % 2 ? 1 : -1;
+      ctx.save();
+      ctx.translate(n * 0.006 * scale, n * t * scale);
+      ctx.rotate(side * 0.9 - 0.2);
+      ctx.fillStyle = k % 3 === 0 ? '#b49f63' : '#8f9f80';
+      ctx.beginPath();
+      ctx.ellipse(side * n * 0.022 * scale, 0, n * 0.024 * scale, n * 0.009 * scale, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+    ctx.restore();
+  };
+  // a half-drop grid of sprigs, turned this way and that; drawn with wraps
+  const motifs = [];
+  for (let i = 0; i < 4; i++) for (let j = 0; j < 4; j++) motifs.push([(i + 0.5) / 4, (j + 0.25 + (i % 2) * 0.5) / 4, 0.75 + r() * 0.3, r() * 6.3]);
+  for (const [mx, my, s, t] of motifs) {
+    for (const ox of [-1, 0, 1]) for (const oy of [-1, 0, 1]) sprig((mx + ox) * n, (my + oy) * n, s * 0.9, t);
+  }
+  return { map: tex(c, true, 24 * 0.0254, aniso) };
+}
+
+// In the halls: an abstract of low hills, ochre and slate under a pale sky,
+// laid on in broad strokes.
+export function hills(w, h) {
+  const c = document.createElement('canvas');
+  c.width = w; c.height = h;
+  const ctx = c.getContext('2d');
+  ctx.fillStyle = '#e9e1d0'; ctx.fillRect(0, 0, w, h);
+  const r = rng(171);
+  const bands = [['#c9cfcc', 0.38], ['#9aa7ad', 0.5], ['#c79a5b', 0.6], ['#6f7d86', 0.7], ['#b07c48', 0.8], ['#3f4a50', 0.9]];
+  for (const [colr, y0] of bands) {
+    ctx.fillStyle = colr;
+    ctx.beginPath(); ctx.moveTo(0, h);
+    const a = r() * 6, f = 1.5 + r() * 2;
+    for (let x = 0; x <= w; x += w / 40) ctx.lineTo(x, h * (y0 + Math.sin(x / w * f * Math.PI + a) * 0.05 + (r() - 0.5) * 0.008));
+    ctx.lineTo(w, h); ctx.fill();
+  }
+  // brush marks
+  for (let i = 0; i < 1400; i++) {
+    ctx.fillStyle = `rgba(${r() > 0.5 ? 250 : 30},${r() > 0.5 ? 240 : 35},${r() > 0.5 ? 225 : 30},0.035)`;
+    ctx.fillRect(r() * w, r() * h, w * (0.02 + r() * 0.06), h * 0.006);
+  }
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  return t;
+}
+
+// Over the bed in bedroom 3 and in bath 2's toilet room: a pressed fern on
+// cream paper.
+export function fern(w, h) {
+  const c = document.createElement('canvas');
+  c.width = w; c.height = h;
+  const ctx = c.getContext('2d');
+  ctx.fillStyle = '#efe8da'; ctx.fillRect(0, 0, w, h);
+  const r = rng(181);
+  const frond = (x0, y0, len, ang, col) => {
+    ctx.strokeStyle = col; ctx.fillStyle = col;
+    ctx.lineWidth = len * 0.012;
+    const pts = [];
+    for (let i = 0; i <= 30; i++) {
+      const t = i / 30, bend = Math.sin(t * 1.4) * 0.25;
+      pts.push([x0 + Math.sin(ang + bend) * len * t, y0 - Math.cos(ang + bend) * len * t]);
+    }
+    ctx.beginPath(); pts.forEach(([x, y], i) => (i ? ctx.lineTo(x, y) : ctx.moveTo(x, y))); ctx.stroke();
+    for (let i = 3; i < 30; i++) {
+      const t = i / 30, [x, y] = pts[i], l = len * 0.16 * Math.sin(t * Math.PI) * (1 - t * 0.3);
+      for (const side of [-1, 1]) {
+        const a = ang + side * (1.05 - t * 0.3);
+        ctx.save(); ctx.translate(x, y); ctx.rotate(a);
+        ctx.beginPath(); ctx.ellipse(0, -l / 2, l * 0.13, l / 2, 0, 0, Math.PI * 2); ctx.fill();
+        ctx.restore();
+      }
+    }
+  };
+  frond(w * 0.5, h * 0.92, h * 0.85, -0.12, '#5e6e4a');
+  frond(w * 0.42, h * 0.95, h * 0.6, -0.5, '#7f8c63');
+  frond(w * 0.6, h * 0.95, h * 0.55, 0.45, '#6b7a55');
+  for (let i = 0; i < 2000; i++) {
+    ctx.fillStyle = `rgba(120,100,70,${0.02 * r()})`;
+    ctx.fillRect(r() * w, r() * h, 2, 2);
+  }
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  return t;
+}

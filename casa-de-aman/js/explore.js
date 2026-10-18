@@ -22,9 +22,9 @@ const NODES = {
   N: { name: "Butler's pantry", room: 'pantry', at: [34.4, 25.4], look: [30.5, 13] },
   D1: { name: 'Dining', room: 'dining', at: [49.6, 13.0], look: [44, 1.0] },
   D2: { name: 'Dining', room: 'dining', at: [40.1, 9.0], look: [50, 8] },
-  M: { name: 'Mudbench', room: 'hall', at: [30.0, 36.0], look: [35, 41.5] },
-  PW: { name: 'Powder', room: 'powder', at: [35.7, 32.4], look: [35.7, 29] },
-  LA: { name: 'Laundry', room: 'laundry', at: [18.0, 34.0], look: [18, 29] },
+  M: { name: 'Mudbench', room: 'hall', at: [30.6, 35.0], look: [33.8, 42.3] },
+  PW: { name: 'Powder', room: 'powder', at: [34.6, 30.6], look: [36.0, 35.7] },
+  LA: { name: 'Laundry', room: 'laundry', at: [18.2, 36.8], look: [17.5, 29] },
   G: { name: 'Garage', room: 'garage', at: [14.0, 18.0], look: [14, 5] },
   MB1: { name: 'Master bedroom', room: 'mbed', at: [24.2, 45.6], look: [16, 60] },
   MB2: { name: 'Master bedroom', room: 'mbed', at: [17.4, 56.4], look: [27, 50] },
@@ -32,9 +32,11 @@ const NODES = {
   MBA2: { name: 'Master bath', room: 'mbath', at: [9.0, 48.2], look: [3, 60] },
   MC: { name: 'Master closet', room: 'mcloset', at: [7.1, 43.3], look: [7.1, 36] },
   BH: { name: 'Hall', room: 'bhall', at: [77.4, 21.8], look: [77.4, 15] },
-  B3: { name: 'Bedroom 3', room: 'bed3', at: [79.0, 9.0], look: [86, 6] },
-  B2: { name: 'Bedroom 2', room: 'bed2', at: [79.0, 35.0], look: [86, 36] },
-  BA2: { name: 'Bath 2', room: 'bath2', at: [85.4, 21.8], look: [88, 21.8] },
+  B3: { name: 'Bedroom 3', room: 'bed3', at: [79.6, 11.8], look: [86.5, 4.0] },
+  B3b: { name: 'Bedroom 3', room: 'bed3', at: [80.4, 3.2], look: [86, 10] },
+  B2: { name: 'Bedroom 2', room: 'bed2', at: [79.6, 31.6], look: [88, 37] },
+  B2b: { name: 'Bedroom 2', room: 'bed2', at: [78.7, 40.4], look: [88, 33] },
+  BA2: { name: 'Bath 2', room: 'bath2', at: [85.4, 16.6], look: [86.6, 28.4] },
 };
 
 // Links between spots, with the points the walk passes through (doorways).
@@ -57,8 +59,8 @@ const LINKS = [
   ['K2', 'M', [[42.0, 36.8], [39.6, 38.4], [37.8, 38.4], [35.0, 38.4]]],
   ['D1', 'D2', [[46.0, 15.6], [40.6, 14.0]]],
   ['M', 'N', [[31.5, 30.6], [31.5, 28.85], [31.8, 26.0]]],
-  ['M', 'PW', [[32.3, 32.3], [33.7, 32.3]]],
-  ['M', 'LA', [[23.6, 37.0], [22.4, 37.0], [20.5, 35.5]]],
+  ['M', 'PW', [[32.3, 32.3], [34.6, 32.3]]],
+  ['M', 'LA', [[23.6, 37.0], [22.4, 37.0]]],
   ['M', 'G', [[24.9, 31.0], [24.9, 28.85], [22.0, 25.5]]],
   ['M', 'MB1', [[28.4, 40.6], [27.8, 43.15], [27.6, 44.6]]],
   ['MB1', 'MB2', [[20.0, 47.5]]],
@@ -70,8 +72,11 @@ const LINKS = [
   ['MC', 'LA', [[10.4, 42.6], [10.4, 37.6], [11.6, 35.9], [13.6, 35.9], [15.5, 35.5]]],
   ['BH', 'B3', [[77.4, 15.0], [78.5, 11.5]]],
   ['BH', 'B2', [[77.4, 28.6], [78.5, 31.5]]],
-  ['B3', 'BA2', [[85.7, 12.8], [85.7, 15.0]]],
-  ['B2', 'BA2', [[81.5, 31.0], [85.7, 30.6], [85.7, 28.6]]],
+  ['B3', 'B3b', [[79.2, 6.0]]],
+  ['B2', 'B2b', []],
+  // round the bath doors standing open into the bedrooms
+  ['B3', 'BA2', [[85.3, 11.6], [85.7, 12.6], [85.7, 15.0]]],
+  ['B2', 'BA2', [[81.5, 31.9], [85.3, 31.9], [85.7, 30.4], [85.7, 28.6]]],
 ];
 
 // Which spot a room on the plan takes you to.
@@ -81,7 +86,8 @@ const ROOM_NODE = {
   bhall: 'BH', bath2: 'BA2', frontPorch: 'FP', rearPorch: 'RP1',
 };
 // Rooms with their finishes in; the rest are still the drawing.
-const FITTED = new Set(['entry', 'living', 'kitchen', 'dining', 'pantry', 'frontPorch', 'rearPorch', 'mbed', 'mbath', 'mcloset']);
+const FITTED = new Set(['entry', 'living', 'kitchen', 'dining', 'pantry', 'frontPorch', 'rearPorch', 'mbed', 'mbath', 'mcloset',
+  'bed2', 'bed3', 'bhall', 'bath2', 'powder', 'laundry', 'hall']);
 
 // ---------------------------------------------------------------- graph
 

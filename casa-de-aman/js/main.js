@@ -1,7 +1,8 @@
 // Casa De AMan: the plan sheet, the walls rising out of it, the roof
 // landing, the walk in through the front door, the living room, out to the
 // rear porch, then the kitchen, the butler's pantry and the dining room.
-// From there you explore on foot; the master suite sweeps in as you walk in.
+// From there you explore on foot; the master suite, the bedroom wing, the
+// powder room, the laundry and the mudbench hall sweep in as you walk in.
 import * as THREE from 'three';
 import { RGBELoader } from 'three/addons/loaders/RGBELoader.js';
 import * as P from './plan.js';
@@ -114,6 +115,8 @@ function makeMaterials() {
   const bathTile = T.marbleTile(LOW ? 512 : 1024, aniso);
   const hex = T.hexMosaic(LOW ? 512 : 1024, aniso);
   const stack = T.stackTile(LOW ? 512 : 1024, aniso);
+  const cement = T.cementTile(LOW ? 512 : 1024, aniso);
+  const paper = T.wallpaper(LOW ? 512 : 1024, aniso);
   const n2 = (k) => new THREE.Vector2(k, k);
 
   const roofed = { ext: true, roofCut: wy(P.PLATE) + 0.01 };
@@ -142,7 +145,6 @@ function makeMaterials() {
     fascia: std({ color: '#202022', roughness: 0.6 }, roofed),
     floor: std({ ...oak, color: new THREE.Color(1.22, 1.12, 1.0), roughness: 0.62 }, { clip: true, discard: true, interior: true, single: true }),
     oak: std({ ...oak, color: new THREE.Color(1.18, 1.06, 0.92), roughness: 0.62 }, CI),
-    tile: std({ color: '#d9d6cf', roughness: 0.4 }, { clip: true, discard: true, interior: true, single: true }),
     carpet: std({ ...linen, color: '#cbc4b8', roughness: 1 }, { clip: true, discard: true, interior: true, single: true }),
     garageFloor: std({ ...conc, roughness: 0.85 }, { clip: true, discard: true, interior: true, single: true }),
     cab: std({ color: '#e9e6df', roughness: 0.55 }, CI),
@@ -215,7 +217,9 @@ function makeMaterials() {
     showerTile: std({ ...stack, roughness: 0.1 }, CI),
     marbleTop: std({ ...marble, color: '#f4f1ec', roughness: 0.18 }, CI),
     vanityOak: std({ ...oak, color: new THREE.Color(1.02, 0.84, 0.64), roughness: 0.5 }, CI),
-    mirror: std({ color: '#cfd4d6', roughness: 0.04, metalness: 1 }, CI),
+    // a true mirror would show the sky's environment map, sun and all; a
+    // pale glossy grey reads as the room it faces
+    mirror: std({ color: '#c3cacc', roughness: 0.18, metalness: 0.3, envMapIntensity: 0.2 }, CI),
     bedding: std({ ...linen, map: null, color: '#f1ede6', roughness: 1 }, CI),
     headboard: std({ ...linen, map: null, color: '#8b8175', roughness: 1 }, CI),
     bedThrow: std({ ...linen, map: null, color: '#a88d70', roughness: 1 }, CI),
@@ -231,6 +235,24 @@ function makeMaterials() {
     garmentD: std({ ...linen, map: null, color: '#a9875f', roughness: 1 }, CI),
     garmentE: std({ ...linen, map: null, color: '#6a6a4b', roughness: 1 }, CI),
     garmentF: std({ ...linen, map: null, color: '#3a3a3c', roughness: 1 }, CI),
+
+    // the bedroom wing, the powder room, the laundry, the mudbench hall
+    hexFloor: std({ ...hex, roughness: 0.3 }, { clip: true, discard: true, interior: true, single: true }),
+    cementTile: std({ ...cement, roughness: 0.6 }, { clip: true, discard: true, interior: true, single: true }),
+    wallpaper: std({ ...paper, roughness: 0.85 }, CI),
+    navyPaint: std({ color: '#2c3a4e', roughness: 0.5 }, CI),
+    laundryPaint: std({ color: '#93a4aa', roughness: 0.5 }, CI),
+    appliance: std({ color: '#eeeeec', roughness: 0.3 }, CI),
+    headboard2: std({ ...linen, map: null, color: '#6c7a86', roughness: 1 }, CI),
+    bedThrow2: std({ ...linen, map: null, color: '#b98a5e', roughness: 1 }, CI),
+    quilt: std({ ...linen, map: null, color: '#a3ad92', roughness: 1, normalScale: n2(2) }, CI),
+    chairSage: std({ ...linen, map: null, color: '#8f9c86', roughness: 1 }, CI),
+    rug4: std({ ...rug, color: '#c4c8c6', roughness: 1 }, CI),
+    rug4Border: std({ ...rug, color: '#56616a', roughness: 1 }, CI),
+    rug5: std({ ...rug, color: '#dccfb6', roughness: 1 }, CI),
+    rug5Border: std({ ...rug, color: '#8c7258', roughness: 1 }, CI),
+    art3: std({ map: T.hills(720, 460), roughness: 0.75 }, CI),
+    art4: std({ map: T.fern(600, 450), roughness: 0.75 }, CI),
   };
   // the ground circle has unit UVs; scale its tiling up to metres
   for (const k of ['map', 'normalMap', 'roughnessMap']) M.grass[k].repeat.set(640 / 3.2, 640 / 3.2);
@@ -243,7 +265,7 @@ const inkClip = inkMaterial();
 inkClip.clippingPlanes = clip;
 const inkFree = inkMaterial({ opacity: 0.85, ext: true, roofCut: wy(P.PLATE) + 0.01 });
 
-let M, roofGroup, ceilingGroup, doors, slider, pantryDoor, fire, sheet, sky, sun, lights;
+let M, roofGroup, ceilingGroup, doors, slider, pantryDoor, fire, sheet, sky, sun, lights, pool = [];
 
 async function build() {
   M = makeMaterials();
@@ -343,10 +365,8 @@ async function build() {
     pantry: lamp('#ffd6a8', 5, 7, 32.6, 20.0, 8.6),
     dining: lamp('#ffcd96', 6, 8, 45.2, 8.65, 5.8),
     rear: lamp('#ffc890', 2.5, 7, 61.25, 50.7, 8.3),
-    mbed: lamp('#ffd8b0', 9, 12, 21.4, 52.7, 6.8),
-    mbath: lamp('#ffe2c0', 7, 9, 7.6, 54.0, 7.0),
-    mcloset: lamp('#ffdcb4', 6, 8, 7.1, 40.5, 7.0),
   };
+  pool = Array.from({ length: POOL }, () => ({ light: lamp('#ffffff', 0, 1, 0, 0, 0), id: null }));
 }
 
 function setSun(azDeg, elDeg) {
@@ -564,10 +584,14 @@ const ui = {
 };
 let explore = null;
 
-// The master suite is not on the scroll. Each of its rooms sweeps in the
-// first time you walk into it in explore mode, from where you came in, and
-// goes back to the drawing when you return to the tour.
-const SUITE = { mbed: 9, mbath: 6, mcloset: 6 };   // sweep radius, metres
+// The rooms off the scroll (the master suite, the bedroom wing, the powder
+// room, the laundry and the mudbench hall) each sweep in the first time you
+// walk into them in explore mode, from where you came in, and go back to the
+// drawing when you return to the tour. A closet comes in with its bedroom.
+const SUITE = {                                     // sweep radius, metres
+  mbed: 9, mbath: 6, mcloset: 6, bed2: 8, bed3: 8, bath2: 7, bhall: 6, hall: 11, powder: 4, laundry: 6,
+};
+const WITH = { bed2: ['closet2'], bed3: ['closet3'] };
 const suite = {};                                   // id -> { c, v }
 function revealSuite(id) {
   if (!(id in SUITE) || suite[id]) return;
@@ -581,14 +605,61 @@ function stepSuite(dt) {
     moving = true;
   }
   if (moving) applySuite();
+  if (stepLamps(dt)) dirty = true;
 }
+const swept = (id) => (suite[id] ? 1 - (1 - suite[id].v) ** 3 : 0);      // fast out of the door
 function applySuite() {
   for (const id in SUITE) {
-    const s = suite[id], v = s ? 1 - (1 - s.v) ** 3 : 0;      // fast out of the door
-    setRoomSweep(id, s ? s.c : camera.position, v * SUITE[id]);
-    if (lights) lights[id].intensity = lights[id].userData.max * v;
+    const s = suite[id], r = swept(id) * SUITE[id];
+    for (const k of [id, ...(WITH[id] || [])]) setRoomSweep(k, s ? s.c : camera.position, r);
   }
   dirty = true;
+}
+
+// Their lamps: colour, brightness, reach (m), and where, in plan feet. Every
+// point light costs every pixel, so they share a pool of four, held by the
+// lit rooms nearest to you; a lamp handed on fades out first.
+const POOL = 4;
+const LAMPS = {
+  mbed: ['#ffd8b0', 9, 12, 21.4, 52.7, 6.8],
+  mbath: ['#ffe2c0', 7, 9, 7.6, 54.0, 7.0],
+  mcloset: ['#ffdcb4', 6, 8, 7.1, 40.5, 7.0],
+  bed2: ['#ffd8b0', 8, 11, 82.6, 35.4, 6.8],
+  bed3: ['#ffd8b0', 8, 11, 82.6, 7.8, 6.8],
+  bath2: ['#ffe2c0', 6, 8, 85.6, 21.8, 7.0],
+  bhall: ['#ffdcb4', 4, 6, 77.4, 21.8, 8.0],
+  hall: ['#ffd6a8', 7, 10, 30.5, 37.0, 8.4],
+  powder: ['#ffd2a0', 3, 4, 35.7, 32.6, 7.0],
+  laundry: ['#ffe2c0', 5, 7, 18.0, 35.0, 8.0],
+};
+const lampAt = (id) => at(LAMPS[id][3], LAMPS[id][4], LAMPS[id][5]);
+function stepLamps(dt) {
+  if (!pool.length) return false;
+  const near = Object.keys(suite).filter((id) => LAMPS[id])
+    .sort((a, b) => lampAt(a).distanceToSquared(camera.position) - lampAt(b).distanceToSquared(camera.position))
+    .slice(0, POOL);
+  const held = new Set(pool.map((p) => p.id));
+  let changed = false;
+  for (const p of pool) {
+    if (!p.id && p.light.intensity === 0) {
+      const id = near.find((k) => !held.has(k));
+      if (id) {
+        const [color, , dist] = LAMPS[id];
+        p.id = id;
+        held.add(id);
+        p.light.color.set(color);
+        p.light.distance = dist;
+        p.light.position.copy(lampAt(id));
+      }
+    }
+    const on = p.id && near.includes(p.id);
+    const target = on ? LAMPS[p.id][1] * swept(p.id) : 0;
+    const step = (p.id ? LAMPS[p.id][1] : 1) * dt / 0.4;
+    const cur = p.light.intensity, next = target > cur ? Math.min(target, cur + step) : Math.max(target, cur - step);
+    if (next !== p.light.intensity) { p.light.intensity = next; changed = true; }
+    if (!on && next === 0) p.id = null;
+  }
+  return changed;
 }
 
 let dirty = true;
@@ -728,6 +799,7 @@ function leaveExplore() {
   explore.leave();
   for (const id in suite) delete suite[id];
   applySuite();
+  for (const p of pool) { p.light.intensity = 0; p.id = null; }
   exUI.hidden = true;
   document.documentElement.classList.remove('exploring');
   lenis.start();
