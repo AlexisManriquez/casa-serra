@@ -154,19 +154,12 @@ export const roofs = [
 
 // Furniture and built-ins, as boxes [x0, y0, x1, y1, z0, z1] in feet.
 export const furniture = [
-  // the kitchen, living, dining room and butler's pantry are fitted out in
-  // furnish.js
+  // the kitchen, living, dining room, butler's pantry and the master suite
+  // are fitted out in furnish.js
   // bedrooms
   { m: 'linen', b: [82.4, 32.8, 88.92, 38.0, 0, 2.1] },
   { m: 'linen', b: [82.4, 4.6, 88.92, 9.8, 0, 2.1] },
-  { m: 'linen', b: [22.0, 49.4, 29.07, 56.0, 0, 2.2] },
-  { m: 'walnut', b: [27.4, 47.4, 29.07, 49.0, 0, 2.2] },
-  { m: 'walnut', b: [27.4, 56.4, 29.07, 58.0, 0, 2.2] },
   // baths, powder, laundry
-  { m: 'porcelain', b: [1.1, 51.6, 4.0, 56.5, 0, 1.9] },
-  { m: 'cab', b: [11.5, 57.6, 13.4, 62.3, 0, 2.95] },
-  { m: 'cab', b: [11.5, 45.68, 13.4, 50.1, 0, 2.95] },
-  { m: 'porcelain', b: [1.6, 45.9, 3.4, 47.4, 0, 1.4] },
   { m: 'porcelain', b: [86.5, 19.65, 88.92, 24.0, 0, 1.8] },
   { m: 'cab', b: [87.4, 15.2, 88.92, 19.3, 0, 2.95] },
   { m: 'cab', b: [87.4, 24.35, 88.92, 28.4, 0, 2.95] },

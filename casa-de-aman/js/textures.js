@@ -257,6 +257,91 @@ export function subway(n, aniso) {
   };
 }
 
+// The master bath floor: 24" porcelain squares that read as Carrara, soft
+// grey veins drifting across a white ground, with a thin pale grout.
+export function marbleTile(n, aniso) {
+  const inch = n / 48;            // a 2 x 2 block of tiles
+  const warp = fbm(n, 111, [[3, 0.6], [9, 0.3], [27, 0.1]]);
+  const fine = fbm(n, 117, [[60, 0.5], [200, 0.5]]);
+  const r = rng(113);
+  const shift = Array.from({ length: 4 }, () => [r() * 6, r() * 0.6 - 0.3]);
+  const h = new Float32Array(n * n);
+  const col = colourCanvas(n, (p) => {
+    const x = p % n, y = Math.floor(p / n);
+    const fx = x % (24 * inch), fy = y % (24 * inch);
+    const e = Math.min(fx, 24 * inch - fx, fy, 24 * inch - fy);
+    if (e < 0.07 * inch) { h[p] = 0; return [206, 204, 198]; }
+    h[p] = 0.8;
+    // each tile is cut from a different part of the slab
+    const [o, tilt] = shift[(Math.floor(x / (24 * inch)) % 2) + 2 * (Math.floor(y / (24 * inch)) % 2)];
+    const v = Math.abs(Math.sin((x / n) * 7 + (y / n) * 7 * tilt + warp[p] * 2.6 + o));
+    const v2 = Math.abs(Math.sin((x / n) * 17 - (y / n) * 11 + warp[p] * 4 + o * 2));
+    const vein = Math.pow(1 - v, 40) * 0.8 + Math.pow(1 - v, 8) * 0.12 + Math.pow(1 - v2, 90) * 0.35;
+    const k = 242 + (fine[p] - 0.5) * 6 - vein * 75;
+    return [k, k + 1, k + 2];
+  });
+  return {
+    map: tex(col, true, 48 * 0.0254, aniso),
+    normalMap: tex(normalFromHeight(n, h, 1.5), false, 48 * 0.0254, aniso),
+  };
+}
+
+// The shower floor: 2" white hexagons with grey grout.
+export function hexMosaic(n, aniso) {
+  const inch = n / 12;
+  const s = 1.15 * inch;          // hexagon side: 2" across the flats
+  const w = Math.sqrt(3) * s, hh = 1.5 * s;
+  const h = new Float32Array(n * n);
+  const tone = fbm(n, 121, [[12, 1]]);
+  const col = colourCanvas(n, (p) => {
+    const x = p % n, y = Math.floor(p / n);
+    // nearest centre on a pointy-top hex lattice
+    let best = 1e9, second = 1e9;
+    const row = Math.round(y / hh);
+    for (let j = row - 1; j <= row + 1; j++) {
+      const off = (j & 1) * w / 2;
+      const i = Math.round((x - off) / w);
+      for (let k = i - 1; k <= i + 1; k++) {
+        const d = Math.hypot(x - (k * w + off), y - j * hh);
+        if (d < best) { second = best; best = d; } else if (d < second) second = d;
+      }
+    }
+    const e = second - best;
+    if (e < 0.16 * inch) { h[p] = 0; return [168, 166, 160]; }
+    h[p] = Math.min(1, e / (0.5 * inch));
+    const k = 236 + (tone[p] - 0.5) * 14;
+    return [k, k, k - 3];
+  });
+  return {
+    map: tex(col, true, 12 * 0.0254, aniso),
+    normalMap: tex(normalFromHeight(n, h, 2.5), false, 12 * 0.0254, aniso),
+  };
+}
+
+// The shower walls: 3x12 glazed tile in a vertical stack bond, each tile a
+// touch different, like handmade.
+export function stackTile(n, aniso) {
+  const inch = n / 24;
+  const h = new Float32Array(n * n);
+  const r = rng(131);
+  const shade = Array.from({ length: 16 }, () => (r() - 0.5) * 12);
+  const wave = fbm(n, 133, [[16, 0.6], [48, 0.4]]);
+  const col = colourCanvas(n, (p) => {
+    const x = p % n, y = Math.floor(p / n);
+    const i = Math.floor(x / (3 * inch)), j = Math.floor(y / (12 * inch));
+    const fx = x - i * 3 * inch, fy = y - j * 12 * inch;
+    const e = Math.min(fx, 3 * inch - fx, fy, 12 * inch - fy);
+    if (e < 0.08 * inch) { h[p] = 0; return [200, 198, 192]; }
+    h[p] = Math.min(1, e / (0.3 * inch)) * 0.7 + wave[p] * 0.25;
+    const k = 236 + shade[(i + j * 8) % 16] + (wave[p] - 0.5) * 10;
+    return [k, k - 2, k - 6];
+  });
+  return {
+    map: tex(col, true, 24 * 0.0254, aniso),
+    normalMap: tex(normalFromHeight(n, h, 2.4), false, 24 * 0.0254, aniso),
+  };
+}
+
 // Book spines for the shelves: stripes of muted cloth colours, 3/4" to 2"
 // wide, with a pale band or two for titles. Mapped in world metres, so a
 // box of "books" shows one spine per stripe.
@@ -314,6 +399,37 @@ export function painting(w, h) {
   for (let i = 0; i < 4000; i++) {
     ctx.fillStyle = `rgba(${r() > 0.5 ? 255 : 0},${r() > 0.5 ? 230 : 0},${r() > 0.5 ? 200 : 0},0.035)`;
     ctx.fillRect(r() * w, r() * h, w * 0.02 * r(), h * 0.004);
+  }
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  return t;
+}
+
+// Over the dresser in the master bedroom: a salt marsh at first light, wide
+// and quiet, in soft washes.
+export function marsh(w, h) {
+  const c = document.createElement('canvas');
+  c.width = w; c.height = h;
+  const ctx = c.getContext('2d');
+  const sky = ctx.createLinearGradient(0, 0, 0, h * 0.6);
+  sky.addColorStop(0, '#b9c3c4'); sky.addColorStop(0.7, '#e8dcc6'); sky.addColorStop(1, '#efd9b8');
+  ctx.fillStyle = sky; ctx.fillRect(0, 0, w, h);
+  const r = rng(141);
+  // water, then bands of marsh grass toward the front
+  ctx.fillStyle = '#c9cbc2'; ctx.fillRect(0, h * 0.58, w, h * 0.1);
+  const bands = [['#a39a6e', 0.62], ['#8d8457', 0.7], ['#7a6d44', 0.8], ['#5f5434', 0.9]];
+  for (const [colr, y0] of bands) {
+    ctx.fillStyle = colr;
+    ctx.beginPath(); ctx.moveTo(0, h);
+    for (let x = 0; x <= w; x += w / 24) ctx.lineTo(x, h * (y0 + (r() - 0.5) * 0.04));
+    ctx.lineTo(w, h); ctx.fill();
+  }
+  // a far line of trees on the horizon
+  ctx.fillStyle = 'rgba(92,100,92,0.75)';
+  for (let x = 0; x < w; x += w / 90) ctx.fillRect(x, h * (0.56 - r() * 0.035), w / 70, h * 0.04);
+  for (let i = 0; i < 3000; i++) {
+    ctx.fillStyle = `rgba(${r() > 0.5 ? 255 : 40},${r() > 0.5 ? 240 : 40},${r() > 0.5 ? 220 : 30},0.03)`;
+    ctx.fillRect(r() * w, r() * h, w * 0.03 * r(), h * 0.003);
   }
   const t = new THREE.CanvasTexture(c);
   t.colorSpace = THREE.SRGBColorSpace;

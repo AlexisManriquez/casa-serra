@@ -1,6 +1,7 @@
 // Casa De AMan: the plan sheet, the walls rising out of it, the roof
 // landing, the walk in through the front door, the living room, out to the
 // rear porch, then the kitchen, the butler's pantry and the dining room.
+// From there you explore on foot; the master suite sweeps in as you walk in.
 import * as THREE from 'three';
 import { RGBELoader } from 'three/addons/loaders/RGBELoader.js';
 import * as P from './plan.js';
@@ -110,6 +111,9 @@ function makeMaterials() {
   const gran = T.granite(LOW ? 512 : 1024, aniso);
   const tile = T.subway(LOW ? 512 : 1024, aniso);
   const spines = T.bookSpines(LOW ? 256 : 512, aniso);
+  const bathTile = T.marbleTile(LOW ? 512 : 1024, aniso);
+  const hex = T.hexMosaic(LOW ? 512 : 1024, aniso);
+  const stack = T.stackTile(LOW ? 512 : 1024, aniso);
   const n2 = (k) => new THREE.Vector2(k, k);
 
   const roofed = { ext: true, roofCut: wy(P.PLATE) + 0.01 };
@@ -204,6 +208,29 @@ function makeMaterials() {
     porchCeiling: std({ ...oak, color: new THREE.Color(1.15, 0.78, 0.55), roughness: 0.7 }, C),
     rockerPaint: std({ color: '#1f2021', roughness: 0.55 }, C),
     planter: std({ color: '#232425', roughness: 0.6 }, C),
+
+    // the master suite
+    bathTile: std({ ...bathTile, roughness: 0.22 }, { clip: true, discard: true, interior: true, single: true }),
+    mosaic: std({ ...hex, roughness: 0.3 }, CI),
+    showerTile: std({ ...stack, roughness: 0.1 }, CI),
+    marbleTop: std({ ...marble, color: '#f4f1ec', roughness: 0.18 }, CI),
+    vanityOak: std({ ...oak, color: new THREE.Color(1.02, 0.84, 0.64), roughness: 0.5 }, CI),
+    mirror: std({ color: '#cfd4d6', roughness: 0.04, metalness: 1 }, CI),
+    bedding: std({ ...linen, map: null, color: '#f1ede6', roughness: 1 }, CI),
+    headboard: std({ ...linen, map: null, color: '#8b8175', roughness: 1 }, CI),
+    bedThrow: std({ ...linen, map: null, color: '#a88d70', roughness: 1 }, CI),
+    rug3: std({ ...rug, color: '#d6cec2', roughness: 1 }, CI),
+    rug3Border: std({ ...rug, color: '#8f8475', roughness: 1 }, CI),
+    bathMat: std({ ...linen, color: '#e2dbcd', roughness: 1 }, CI),
+    towel: std({ ...linen, map: null, color: '#ece7de', roughness: 1, normalScale: n2(2.5) }, CI),
+    art2: std({ map: T.marsh(768, 490), roughness: 0.75 }, CI),
+    // closet: shirts, chambray, navy, camel, olive, charcoal
+    garmentA: std({ ...linen, map: null, color: '#eeebe4', roughness: 1 }, CI),
+    garmentB: std({ ...linen, map: null, color: '#a7b8c6', roughness: 1 }, CI),
+    garmentC: std({ ...linen, map: null, color: '#2e3747', roughness: 1 }, CI),
+    garmentD: std({ ...linen, map: null, color: '#a9875f', roughness: 1 }, CI),
+    garmentE: std({ ...linen, map: null, color: '#6a6a4b', roughness: 1 }, CI),
+    garmentF: std({ ...linen, map: null, color: '#3a3a3c', roughness: 1 }, CI),
   };
   // the ground circle has unit UVs; scale its tiling up to metres
   for (const k of ['map', 'normalMap', 'roughnessMap']) M.grass[k].repeat.set(640 / 3.2, 640 / 3.2);
@@ -316,6 +343,9 @@ async function build() {
     pantry: lamp('#ffd6a8', 5, 7, 32.6, 20.0, 8.6),
     dining: lamp('#ffcd96', 6, 8, 45.2, 8.65, 5.8),
     rear: lamp('#ffc890', 2.5, 7, 61.25, 50.7, 8.3),
+    mbed: lamp('#ffd8b0', 9, 12, 21.4, 52.7, 6.8),
+    mbath: lamp('#ffe2c0', 7, 9, 7.6, 54.0, 7.0),
+    mcloset: lamp('#ffdcb4', 6, 8, 7.1, 40.5, 7.0),
   };
 }
 
@@ -534,6 +564,33 @@ const ui = {
 };
 let explore = null;
 
+// The master suite is not on the scroll. Each of its rooms sweeps in the
+// first time you walk into it in explore mode, from where you came in, and
+// goes back to the drawing when you return to the tour.
+const SUITE = { mbed: 9, mbath: 6, mcloset: 6 };   // sweep radius, metres
+const suite = {};                                   // id -> { c, v }
+function revealSuite(id) {
+  if (!(id in SUITE) || suite[id]) return;
+  suite[id] = { c: camera.position.clone().setY(wy(4)), v: 0 };
+}
+function stepSuite(dt) {
+  let moving = false;
+  for (const id in suite) {
+    if (suite[id].v >= 1) continue;
+    suite[id].v = Math.min(1, suite[id].v + dt / 2.2);
+    moving = true;
+  }
+  if (moving) applySuite();
+}
+function applySuite() {
+  for (const id in SUITE) {
+    const s = suite[id], v = s ? 1 - (1 - s.v) ** 3 : 0;      // fast out of the door
+    setRoomSweep(id, s ? s.c : camera.position, v * SUITE[id]);
+    if (lights) lights[id].intensity = lights[id].userData.max * v;
+  }
+  dirty = true;
+}
+
 let dirty = true;
 function apply() {
   const t = tl.time();
@@ -631,6 +688,7 @@ lenis.on('scroll', ScrollTrigger.update);
 gsap.ticker.add((time, delta) => {
   lenis.raf(time * 1000);
   explore?.update(Math.min(0.1, delta / 1000));
+  stepSuite(Math.min(0.1, delta / 1000));
   render();
 });
 gsap.ticker.lagSmoothing(0);
@@ -645,10 +703,11 @@ explore = createExplore({
   camera, canvas,
   ui: { markers: document.getElementById('exMarkers'), plan: document.getElementById('exPlan') },
   onChange: () => { dirty = true; },
-  onRoom: (name, sf, drawing) => {
+  onRoom: (name, sf, drawing, id) => {
     document.getElementById('exRoom').textContent = name;
     document.getElementById('exSf').textContent = sf;
     document.getElementById('exNote').hidden = !drawing;
+    revealSuite(id);
   },
 });
 const exUI = document.getElementById('explore');
@@ -667,6 +726,8 @@ function enterExplore() {
 function leaveExplore() {
   if (!explore.active) return;
   explore.leave();
+  for (const id in suite) delete suite[id];
+  applySuite();
   exUI.hidden = true;
   document.documentElement.classList.remove('exploring');
   lenis.start();
@@ -688,9 +749,17 @@ addEventListener('keydown', (e) => { if (e.key === 'Escape') leaveExplore(); });
 if (location.hash === '#explore') enterExplore();
 
 // For recording and checking a single frame: casa.at(0.5) jumps there.
+// casa.step(dt) moves explore mode on by dt seconds and renders
+// (casa.step(dt, false) moves it on without drawing).
 window.casa = {
   tl, state,
   at(p) { tl.progress(p); apply(); dirty = true; render(); },
+  step(dt, draw = true) {
+    explore.update(dt);
+    explore.overlay();
+    stepSuite(dt);
+    if (draw) { dirty = true; render(); }
+  },
   scene, shared, camera, renderer,
   info: () => renderer.info,
   get explore() { return explore; },

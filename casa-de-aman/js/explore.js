@@ -26,10 +26,11 @@ const NODES = {
   PW: { name: 'Powder', room: 'powder', at: [35.7, 32.4], look: [35.7, 29] },
   LA: { name: 'Laundry', room: 'laundry', at: [18.0, 34.0], look: [18, 29] },
   G: { name: 'Garage', room: 'garage', at: [14.0, 18.0], look: [14, 5] },
-  MB1: { name: 'Master bedroom', room: 'mbed', at: [25.5, 46.5], look: [20, 58] },
-  MB2: { name: 'Master bedroom', room: 'mbed', at: [17.0, 57.5], look: [26, 50] },
-  MBA: { name: 'Master bath', room: 'mbath', at: [8.0, 53.9], look: [2, 54] },
-  MC: { name: 'Master closet', room: 'mcloset', at: [7.1, 40.0], look: [7.1, 36] },
+  MB1: { name: 'Master bedroom', room: 'mbed', at: [24.2, 45.6], look: [16, 60] },
+  MB2: { name: 'Master bedroom', room: 'mbed', at: [17.4, 56.4], look: [27, 50] },
+  MBA: { name: 'Master bath', room: 'mbath', at: [9.6, 53.9], look: [1.5, 56.0] },
+  MBA2: { name: 'Master bath', room: 'mbath', at: [9.0, 48.2], look: [3, 60] },
+  MC: { name: 'Master closet', room: 'mcloset', at: [7.1, 43.3], look: [7.1, 36] },
   BH: { name: 'Hall', room: 'bhall', at: [77.4, 21.8], look: [77.4, 15] },
   B3: { name: 'Bedroom 3', room: 'bed3', at: [79.0, 9.0], look: [86, 6] },
   B2: { name: 'Bedroom 2', room: 'bed2', at: [79.0, 35.0], look: [86, 36] },
@@ -59,12 +60,14 @@ const LINKS = [
   ['M', 'PW', [[32.3, 32.3], [33.7, 32.3]]],
   ['M', 'LA', [[23.6, 37.0], [22.4, 37.0], [20.5, 35.5]]],
   ['M', 'G', [[24.9, 31.0], [24.9, 28.85], [22.0, 25.5]]],
-  ['M', 'MB1', [[28.4, 40.6], [27.8, 43.15]]],
+  ['M', 'MB1', [[28.4, 40.6], [27.8, 43.15], [27.6, 44.6]]],
   ['MB1', 'MB2', [[20.0, 47.5]]],
   ['MB1', 'MBA', [[17.0, 50.0], [15.5, 53.9], [13.6, 53.9]]],
   ['MB2', 'MBA', [[15.5, 53.9], [13.6, 53.9]]],
+  ['MBA', 'MBA2', []],
   ['MBA', 'MC', [[6.85, 47.5], [6.85, 45.5]]],
-  ['MC', 'LA', [[11.5, 35.9], [13.6, 35.9], [15.5, 35.5]]],
+  ['MBA2', 'MC', [[6.85, 46.2], [6.85, 45.4]]],
+  ['MC', 'LA', [[10.4, 42.6], [10.4, 37.6], [11.6, 35.9], [13.6, 35.9], [15.5, 35.5]]],
   ['BH', 'B3', [[77.4, 15.0], [78.5, 11.5]]],
   ['BH', 'B2', [[77.4, 28.6], [78.5, 31.5]]],
   ['B3', 'BA2', [[85.7, 12.8], [85.7, 15.0]]],
@@ -78,7 +81,7 @@ const ROOM_NODE = {
   bhall: 'BH', bath2: 'BA2', frontPorch: 'FP', rearPorch: 'RP1',
 };
 // Rooms with their finishes in; the rest are still the drawing.
-const FITTED = new Set(['entry', 'living', 'kitchen', 'dining', 'pantry', 'frontPorch', 'rearPorch']);
+const FITTED = new Set(['entry', 'living', 'kitchen', 'dining', 'pantry', 'frontPorch', 'rearPorch', 'mbed', 'mbath', 'mcloset']);
 
 // ---------------------------------------------------------------- graph
 
@@ -325,7 +328,7 @@ export function createExplore({ camera, canvas, ui, onChange, onRoom }) {
       const node = here && NODES[ROOM_NODE[here]];
       const room = P.rooms.find((r) => r.id === here && r.sf);
       const sf = room ? room.sf : { frontPorch: 171, rearPorch: 412 }[here];
-      onRoom(node ? node.name : 'Outside', sf ? `${sf} sq ft` : '', here && !FITTED.has(here));
+      onRoom(node ? node.name : 'Outside', sf ? `${sf} sq ft` : '', here && !FITTED.has(here), here);
     }
   }
 

@@ -441,7 +441,9 @@ export function buildInterior(batch) {
   batch.pbox(s.landing, 0, top, 'oak');
   // floors, one per room, plus thresholds
   for (const r of P.rooms) {
-    const m = r.id === 'garage' ? 'garageFloor' : ['mbath', 'bath2', 'powder', 'laundry'].includes(r.id) ? 'tile' : ['bed2', 'bed3', 'mbed', 'closets', 'mcloset'].includes(r.id) ? 'carpet' : 'oak';
+    // the master suite takes the oak through, and marble-look tile in the bath
+    const m = r.id === 'garage' ? 'garageFloor' : r.id === 'mbath' ? 'bathTile'
+      : ['bath2', 'powder', 'laundry'].includes(r.id) ? 'tile' : ['bed2', 'bed3', 'closets'].includes(r.id) ? 'carpet' : 'oak';
     batch.pbox(r.r, -0.02, 0, m === 'oak' ? 'floor' : m, { edges: false, skip: ['ny', 'px', 'nx', 'pz', 'nz'] });
   }
   // baseboards wherever a wall meets the floor, and casings on the openings
